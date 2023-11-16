@@ -6,12 +6,12 @@ ClientSocket::ClientSocket(const std::string& ipAddress, int port)
 }
 
 
-int ClientSocket::Send(const char* buffer, size_t len)
+int ClientSocket::Send(const std::string buffer, size_t len)
 {
 	return CSocketImplPtr->Send(buffer, len);
 }
 
-int ClientSocket::Recv(char* buffer, size_t len)
+int ClientSocket::Recv(std::string buffer, size_t len)
 {
 	return CSocketImplPtr->Recv(buffer, len);
 }

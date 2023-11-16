@@ -12,10 +12,10 @@ class ClientSocketImpl
 public:
 	ClientSocketImpl() = delete;
 	ClientSocketImpl(const std::string& ipAddress, int port);
-	~ClientSocketImpl() = default;
+	~ClientSocketImpl();
 
-	int Send(const char* buffer, size_t len);
-	int Recv(char* buffer, size_t len);
+	int Send(const std::string& buffer, size_t len);
+	int Recv(std::string& buffer, size_t len);
 private:
 
 #ifdef _WIN32
