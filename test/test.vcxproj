@@ -130,10 +130,15 @@
     <ClCompile Include="ClientSocket.cpp" />
     <ClCompile Include="ClientSocketImpl.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="RobotInfo.cpp" />
+    <ClCompile Include="RobotInfoHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClientSocket.h" />
     <ClInclude Include="ClientSocketImpl.h" />
+    <ClInclude Include="RobotInfo.h" />
+    <ClInclude Include="RobotInfoHandler.h" />
+    <ClInclude Include="RobotMoveSubSystem.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

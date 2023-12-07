@@ -9,7 +9,7 @@ ClientSocketImpl::ClientSocketImpl(const std::string& ipAddress, int port)
 	result = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (result != 0)
 	{
-		;
+		// TO-DO: Log System
 	}
 	m_Socket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
 

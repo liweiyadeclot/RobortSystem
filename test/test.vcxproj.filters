@@ -24,12 +24,27 @@
     <ClCompile Include="ClientSocketImpl.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="RobotInfo.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="RobotInfoHandler.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClientSocket.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ClientSocketImpl.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="RobotInfoHandler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="RobotInfo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="RobotMoveSubSystem.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
