@@ -30,6 +30,9 @@
     <ClCompile Include="RobotInfoHandler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="RobotMoveSubSystem.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClientSocket.h">

@@ -14,7 +14,7 @@ private:
 	std::string RobotPosToString(const RobotInfo::RobotPos& pos);
 private:
 	static const int TCP_PORT = 9000;
-
-	ClientSocket m_Socket;
+	static const std::string TCP_IP_ADDR;
+	ClientSocket m_Socket = ClientSocket(TCP_IP_ADDR, TCP_PORT);
 	RobotInfo m_RInfo;
 };

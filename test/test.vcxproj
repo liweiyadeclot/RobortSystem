@@ -132,6 +132,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RobotInfo.cpp" />
     <ClCompile Include="RobotInfoHandler.cpp" />
+    <ClCompile Include="RobotMoveSubSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClientSocket.h" />

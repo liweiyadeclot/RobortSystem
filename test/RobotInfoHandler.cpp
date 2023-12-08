@@ -1,5 +1,7 @@
 #include "RobotInfoHandler.h"
 
+const std::string RobotInfoHandler::TCP_IP_ADDR = "192.168.1.12";
+
 bool RobotInfoHandler::SendPos(const RobotInfo::RobotPos& pos)
 {
     std::string buffer = RobotPosToString(pos);
