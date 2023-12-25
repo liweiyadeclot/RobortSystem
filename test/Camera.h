@@ -1,5 +1,6 @@
 #ifndef CAMERA_H
 #define CAMERA_H
+
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -18,6 +19,7 @@ public:
 	~Camera();
 
 	static const std::vector<CameraInfo> ListCameras();
+	bool IsOpen();
 	int32_t StartGrabbing();
 	int32_t StopGrabbing();
 	CameraFrame GetFrame();
