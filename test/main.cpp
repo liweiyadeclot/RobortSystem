@@ -1,6 +1,14 @@
-#include <iostream>
+#include <cstdio>
+#include <cstring>
 #include <fstream>
 #include "MvCameraControl.h"
+#include "Camera.h"
+
+#define USE_OPENCV 1
+
+#if USE_OPENCV
+#include "opencv2/opencv.hpp"
+#endif
 
 using std::ofstream;
 
@@ -79,9 +87,20 @@ int main(int argc, char** argv)
 	// Get image frame
 	MV_FRAME_OUT pstFrame;
 	nRet = MV_CC_GetImageBuffer(handle, &pstFrame, 100);
+	nRet = MV_CC_GetImageBuffer(handle, &pstFrame, 100);
 	if (MV_OK != nRet)
 	{
 		printf("Get image fail! nRet [0x%x]\n", nRet);
+	}
+	else
+	{
+		// Save raw data
+		printf("Frame size:%d\n", pstFrame.stFrameInfo.nFrameLen);
+		char str[16] = "";
+		snprintf(str, sizeof(str), "%dx%d.raw", pstFrame.stFrameInfo.nWidth, pstFrame.stFrameInfo.nHeight);
+		ofstream ofs(str, std::ios::out | std::ios::binary);
+		ofs.write((const char*)(pstFrame.pBufAddr), pstFrame.stFrameInfo.nFrameLen);
+		ofs.close();
 	}
 
 	if (pstFrame.stFrameInfo.nFrameLen < 1)
@@ -89,34 +108,49 @@ int main(int argc, char** argv)
 		printf("Warning: frame too small:%d\n", pstFrame.stFrameInfo.nFrameLen);
 	}
 
-	// Convert raw data to jpeg image
+	// Convert raw data to bmp image
+#if USE_OPENCV
+	cv::Mat BayerFrame(pstFrame.stFrameInfo.nHeight, pstFrame.stFrameInfo.nWidth, CV_8UC1, (void*)(pstFrame.pBufAddr));
+	cv::Mat BGRFrame(pstFrame.stFrameInfo.nHeight, pstFrame.stFrameInfo.nWidth, CV_8UC3);
+	// Convert pixel type from BayerRG8 to BGR
+	cv::cvtColor(BayerFrame, BGRFrame, cv::COLOR_BayerRG2BGR);
+	//cv::imshow("capture", BGRFrame);
+	//cv::waitKey();
+	// Write image frame into file
+	cv::imwrite("output.bmp", BGRFrame);
+#else
 	MV_SAVE_IMAGE_PARAM_EX3 pstSaveParam{ 0 };
-	unsigned char* jpgBuffer = (unsigned char*)malloc(pstFrame.stFrameInfo.nFrameLen);
+	unsigned char* imageFileBuffer = (unsigned char*)malloc(4 * pstFrame.stFrameInfo.nFrameLen);
+	if (imageFileBuffer == nullptr)
+	{
+		printf("malloc fail!\n");
+	}
 	// Attrbute of input
 	pstSaveParam.enPixelType = MvGvspPixelType::PixelType_Gvsp_BayerBG8;
 	pstSaveParam.pData = pstFrame.pBufAddr;
 	pstSaveParam.nHeight = pstFrame.stFrameInfo.nHeight;
 	pstSaveParam.nWidth = pstFrame.stFrameInfo.nWidth;
 	pstSaveParam.nDataLen = pstFrame.stFrameInfo.nFrameLen;
-	pstSaveParam.nJpgQuality = 99;
+	//pstSaveParam.nJpgQuality = 99;
 	// Attribute of output
-	pstSaveParam.iMethodValue = 2;
-	pstSaveParam.nBufferSize = pstFrame.stFrameInfo.nFrameLen;
-	pstSaveParam.pImageBuffer = jpgBuffer;
-	pstSaveParam.enImageType = MV_SAVE_IAMGE_TYPE::MV_Image_Jpeg;
+	pstSaveParam.iMethodValue = 0;
+	pstSaveParam.nBufferSize = 4 * pstFrame.stFrameInfo.nFrameLen;
+	pstSaveParam.pImageBuffer = imageFileBuffer;
+	pstSaveParam.enImageType = MV_SAVE_IAMGE_TYPE::MV_Image_Bmp;
 	nRet = MV_CC_SaveImageEx3(handle, &pstSaveParam);
 
 	if (nRet == MV_OK)
 	{
 		// Write image frame into file
-		ofstream ofs("output.jpg", std::ios::out | std::ios::binary);
-		ofs.write((const char*)(jpgBuffer), pstSaveParam.nImageLen);
+		ofstream ofs("output.bmp", std::ios::out | std::ios::binary);
+		ofs.write((const char*)(imageFileBuffer), pstSaveParam.nImageLen);
 		ofs.close();
 	}
 	else
 	{
 		printf("Convert fail! nRet [0x%x]\n", nRet);
 	}
+#endif // USE_OPENCV
 
 	// Free image frame
 	nRet = MV_CC_FreeImageBuffer(handle, &pstFrame);

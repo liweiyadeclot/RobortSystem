@@ -104,13 +104,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(MVCAM_COMMON_RUNENV)\Includes</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MVCAM_COMMON_RUNENV)\Includes;$(OpenCV_DIR)\..\..\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(MVCAM_COMMON_RUNENV)\Libraries\win64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>MvCameraControl.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MVCAM_COMMON_RUNENV)\Libraries\win64;$(OpenCV_DIR)\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>MvCameraControl.lib;opencv_world480d.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -121,12 +121,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(MVCAM_COMMON_RUNENV)\Includes;$(OpenCV_DIR)\..\..\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>MvCameraControl.lib;opencv_world480.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MVCAM_COMMON_RUNENV)\Libraries\win64;$(OpenCV_DIR)\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -138,6 +141,8 @@
     <ClCompile Include="RobotMoveSubSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="CameraFrame.h" />
     <ClInclude Include="ClientSocket.h" />
     <ClInclude Include="ClientSocketImpl.h" />
     <ClInclude Include="RobotInfo.h" />
