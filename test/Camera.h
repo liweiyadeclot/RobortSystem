@@ -9,10 +9,10 @@
 
 class Camera {
 public:
-	typedef struct CameraInfo
+	struct CameraInfo
 	{
 		uint32_t index;
-	} CameraInfo;
+	};
 
 	Camera();
 	Camera(uint32_t index);

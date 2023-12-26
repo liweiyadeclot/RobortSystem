@@ -87,7 +87,6 @@ int main(int argc, char** argv)
 	// Get image frame
 	MV_FRAME_OUT pstFrame;
 	nRet = MV_CC_GetImageBuffer(handle, &pstFrame, 100);
-	nRet = MV_CC_GetImageBuffer(handle, &pstFrame, 100);
 	if (MV_OK != nRet)
 	{
 		printf("Get image fail! nRet [0x%x]\n", nRet);
