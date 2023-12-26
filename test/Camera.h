@@ -26,6 +26,7 @@ public:
 private:
 	class Implement;
 	std::unique_ptr<Implement> pImpl;
+	friend class CameraFrame;
 };
 
 
