@@ -1,25 +1,8 @@
 #ifndef CAMERA_FRAME_H
 #define CAMERA_FRAME_H
-#include <cstdint>
-#include <memory>
+#include "opencv2/core.hpp"
 
-class Camera;
-
-class CameraFrame {
-public:
-	~CameraFrame();
-	const uint8_t* GetData() const;
-	uint64_t GetDataLength() const;
-	bool IsValid() const;
-	void Free();
-
-private:
-	class Implement;
-	std::unique_ptr<Implement> pImpl;
-
-	friend class Camera;
-	CameraFrame(Camera& source);
-};
+using CameraFrame = cv::Mat;
 
 #endif // !CAMERA_FRAME_H
 

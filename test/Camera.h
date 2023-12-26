@@ -1,13 +1,12 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-
 #include "CameraFrame.h"
 
 class Camera {
 public:
 	Camera();
-	virtual ~Camera() = 0;
+	~Camera();
 
 public:
 	virtual bool IsOpen() = 0;

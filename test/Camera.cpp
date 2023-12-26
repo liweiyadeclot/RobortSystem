@@ -27,7 +27,6 @@ public:
 			return;
 		}
 
-		int32_t nRet;
 		nRet = MV_CC_CreateHandle(&this->handle, stDeviceList.pDeviceInfo[index]);
 		if (MV_OK != nRet)
 		{
@@ -118,7 +117,7 @@ public:
 };
 
 Camera::Camera() 
-	: pImpl(std::make_unique<Camera::Implement>(0))
+	: Camera(0)
 {
 }
 
@@ -193,6 +192,16 @@ public:
 		return this->pstFrame.stFrameInfo.nFrameLen;
 	}
 
+	uint32_t GetImageHeight() const
+	{
+		return this->pstFrame.stFrameInfo.nHeight;
+	}
+
+	uint32_t GetImageWidth() const
+	{
+		return this->pstFrame.stFrameInfo.nWidth;
+	}
+
 	void Free()
 	{
 		int32_t nRet = MV_CC_FreeImageBuffer(this->source.pImpl->handle, &this->pstFrame);
@@ -211,22 +220,36 @@ CameraFrame::CameraFrame(Camera& source) : pImpl(std::make_unique<Implement>(sou
 
 CameraFrame::~CameraFrame() = default;
 
+CameraFrame::CameraFrame(const CameraFrame& other)
+{
+}
+
 const uint8_t* CameraFrame::GetData() const
 {
-	return pImpl->GetData();
+	return this->pImpl->GetData();
 }
 
 uint64_t CameraFrame::GetDataLength() const
 {
-	return pImpl->GetDataLength();
+	return this->pImpl->GetDataLength();
 }
 
 bool CameraFrame::IsValid() const
 {
-	return pImpl->isValid;
+	return this->pImpl->isValid;
+}
+
+uint32_t CameraFrame::GetImageHeight() const
+{
+	return this->pImpl->GetImageHeight();
+}
+
+uint32_t CameraFrame::GetImageWidth() const
+{
+	return this->pImpl->GetImageWidth();
 }
 
 void CameraFrame::Free()
 {
-	pImpl->Free();
+	this->pImpl->Free();
 }
