@@ -1,32 +1,19 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include <cstdint>
-#include <memory>
-#include <vector>
 
 #include "CameraFrame.h"
 
 class Camera {
 public:
-	struct CameraInfo
-	{
-		uint32_t index;
-	};
-
 	Camera();
-	Camera(uint32_t index);
-	~Camera();
+	virtual ~Camera() = 0;
 
-	static const std::vector<CameraInfo> ListCameras();
-	bool IsOpen();
-	int32_t StartGrabbing();
-	int32_t StopGrabbing();
-	CameraFrame GetFrame();
+public:
+	virtual bool IsOpen() = 0;
+	virtual CameraFrame GetFrame() = 0;
 private:
-	class Implement;
-	std::unique_ptr<Implement> pImpl;
-	friend class CameraFrame;
+
 };
 
 
