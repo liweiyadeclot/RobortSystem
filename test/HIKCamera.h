@@ -2,7 +2,8 @@
 #ifndef HIKCAMERA_H
 #define HIKCAMERA_H
 #include "Camera.h"
-class HIKCamera : public Camera{
+class HIKCamera : public Camera
+{
 public:
 	HIKCamera();
 	~HIKCamera();

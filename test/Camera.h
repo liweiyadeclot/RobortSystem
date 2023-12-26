@@ -13,6 +13,7 @@ public:
 	virtual CameraFrame GetFrame() = 0;
 private:
 
+
 };
 
 

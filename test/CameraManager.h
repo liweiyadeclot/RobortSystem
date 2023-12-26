@@ -3,22 +3,20 @@
 #define CAMERA_MANAGER_H
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 #include "Camera.h"
 
-class CameraManager {
+class CameraManager 
+{
 public:
 	using CameraIndex = uint32_t;
-	struct CameraInfo
-	{
-		CameraIndex index;
-	};
 
-	static const std::vector<CameraInfo> EnumCameras();
-	static Camera Open();
-	static Camera Open(CameraIndex index);
+
+	static std::shared_ptr<Camera> GetOrOpenCamera(CameraIndex index = 0);
 private:
-	static CameraManager Instance;
+	static std::vector<std::shared_ptr<Camera>> m_Cameras;
+	static CameraManager* Instance;
 };
 
 #endif // !CAMERA_MANAGER_H
