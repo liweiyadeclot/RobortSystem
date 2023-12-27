@@ -13,60 +13,78 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="头文件\Camera">
+      <UniqueIdentifier>{be7810fa-83aa-4a80-87e0-89adc64797ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Camera">
+      <UniqueIdentifier>{06eb52f6-ae7f-4ed3-bfb6-ebebee74b8fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\Socket">
+      <UniqueIdentifier>{dd1112a4-e3eb-445e-95d1-3ecc2b8083a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Socket">
+      <UniqueIdentifier>{0854df6d-0c23-49e8-9fde-b292f827e424}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\RobotInfo">
+      <UniqueIdentifier>{06e84840-c3a0-466f-918f-23e294253725}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\RobotInfo">
+      <UniqueIdentifier>{168bdb37-b307-4680-bb59-bd162b23d850}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ClientSocket.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ClientSocketImpl.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="RobotInfo.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="RobotInfoHandler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="RobotMoveSubSystem.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Camera.cpp">
-      <Filter>源文件</Filter>
+      <Filter>源文件\Camera</Filter>
     </ClCompile>
     <ClCompile Include="CameraManager.cpp">
-      <Filter>源文件</Filter>
+      <Filter>源文件\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="ClientSocket.cpp">
+      <Filter>源文件\Socket</Filter>
+    </ClCompile>
+    <ClCompile Include="ClientSocketImpl.cpp">
+      <Filter>源文件\Socket</Filter>
+    </ClCompile>
+    <ClCompile Include="RobotInfo.cpp">
+      <Filter>源文件\RobotInfo</Filter>
+    </ClCompile>
+    <ClCompile Include="RobotInfoHandler.cpp">
+      <Filter>源文件\RobotInfo</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ClientSocket.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="ClientSocketImpl.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="RobotInfoHandler.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="RobotInfo.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="RobotMoveSubSystem.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Camera.h">
-      <Filter>头文件</Filter>
+      <Filter>头文件\Camera</Filter>
     </ClInclude>
     <ClInclude Include="CameraFrame.h">
-      <Filter>头文件</Filter>
+      <Filter>头文件\Camera</Filter>
     </ClInclude>
     <ClInclude Include="CameraManager.h">
-      <Filter>头文件</Filter>
+      <Filter>头文件\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientSocket.h">
+      <Filter>头文件\Socket</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientSocketImpl.h">
+      <Filter>头文件\Socket</Filter>
+    </ClInclude>
+    <ClInclude Include="RobotInfo.h">
+      <Filter>头文件\RobotInfo</Filter>
+    </ClInclude>
+    <ClInclude Include="RobotInfoHandler.h">
+      <Filter>头文件\RobotInfo</Filter>
     </ClInclude>
     <ClInclude Include="HIKCamera.h">
-      <Filter>头文件</Filter>
+      <Filter>头文件\Camera</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
