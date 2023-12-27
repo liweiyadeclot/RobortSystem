@@ -133,7 +133,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="HIKCamera.cpp" />
     <ClCompile Include="CameraManager.cpp" />
     <ClCompile Include="ClientSocket.cpp" />
     <ClCompile Include="ClientSocketImpl.cpp" />

@@ -33,7 +33,7 @@
     <ClCompile Include="RobotMoveSubSystem.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Camera.cpp">
+    <ClCompile Include="HIKCamera.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="CameraManager.cpp">
