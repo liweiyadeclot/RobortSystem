@@ -13,51 +13,81 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="头文件\Camera">
+      <UniqueIdentifier>{08e1dc20-ef1c-429c-a988-8e9d77581f39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\Client">
+      <UniqueIdentifier>{fdaa80a9-bfa6-4558-a2e5-6cb71b2d2292}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\RobotInfo">
+      <UniqueIdentifier>{f9ac630c-e673-4a62-8524-902bfe87309c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\Camera\HIKCamera">
+      <UniqueIdentifier>{e346e08d-c320-4c37-b11b-71afaea95e0d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Camera">
+      <UniqueIdentifier>{17a3a53a-6466-4f8c-850b-5971c788ca90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Camera\HIKCamera">
+      <UniqueIdentifier>{d3c8d6cd-4f4f-4561-8c4b-0e1036999b61}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Client">
+      <UniqueIdentifier>{21d01297-5937-431a-9a84-77896a94ffcd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\RobotInfo">
+      <UniqueIdentifier>{22050519-4e96-4f8a-bffb-8526edc59497}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="ClientSocket.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ClientSocketImpl.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="RobotInfo.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="RobotInfoHandler.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="RobotMoveSubSystem.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="HIKCamera.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="CameraManager.cpp">
-      <Filter>源文件</Filter>
+      <Filter>源文件\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="HIKCamera.cpp">
+      <Filter>源文件\Camera\HIKCamera</Filter>
+    </ClCompile>
+    <ClCompile Include="ClientSocket.cpp">
+      <Filter>源文件\Client</Filter>
+    </ClCompile>
+    <ClCompile Include="ClientSocketImpl.cpp">
+      <Filter>源文件\Client</Filter>
+    </ClCompile>
+    <ClCompile Include="RobotInfoHandler.cpp">
+      <Filter>源文件\RobotInfo</Filter>
+    </ClCompile>
+    <ClCompile Include="RobotInfo.cpp">
+      <Filter>源文件\RobotInfo</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClientSocket.h">
-      <Filter>头文件</Filter>
+      <Filter>头文件\Socket</Filter>
     </ClInclude>
     <ClInclude Include="ClientSocketImpl.h">
+      <Filter>头文件\Socket</Filter>
+    </ClInclude>
+    <ClInclude Include="RobotMoveSubSystem.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="CameraFrame.h">
       <Filter>头文件\Camera</Filter>
     </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>头文件\Camera</Filter>
+    </ClInclude>
     <ClInclude Include="CameraManager.h">
       <Filter>头文件\Camera</Filter>
     </ClInclude>
-    <ClInclude Include="ClientSocket.h">
-      <Filter>头文件\Socket</Filter>
-    </ClInclude>
     <ClInclude Include="ClientSocketImpl.h">
-      <Filter>头文件\Socket</Filter>
+      <Filter>头文件\Client</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientSocket.h">
+      <Filter>头文件\Client</Filter>
     </ClInclude>
     <ClInclude Include="RobotInfo.h">
       <Filter>头文件\RobotInfo</Filter>
@@ -65,7 +95,13 @@
     <ClInclude Include="RobotInfoHandler.h">
       <Filter>头文件\RobotInfo</Filter>
     </ClInclude>
+    <ClInclude Include="HIKCamerasControler.h">
+      <Filter>头文件\Camera\HIKCamera</Filter>
+    </ClInclude>
     <ClInclude Include="HIKCamera.h">
+      <Filter>头文件\Camera\HIKCamera</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraControlerBase.h">
       <Filter>头文件\Camera</Filter>
     </ClInclude>
   </ItemGroup>

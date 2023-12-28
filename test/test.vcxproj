@@ -144,11 +144,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CameraControlerBase.h" />
     <ClInclude Include="CameraFrame.h" />
     <ClInclude Include="CameraManager.h" />
     <ClInclude Include="ClientSocket.h" />
     <ClInclude Include="ClientSocketImpl.h" />
     <ClInclude Include="HIKCamera.h" />
+    <ClInclude Include="HIKCamerasControler.h" />
     <ClInclude Include="RobotInfo.h" />
     <ClInclude Include="RobotInfoHandler.h" />
     <ClInclude Include="RobotMoveSubSystem.h" />

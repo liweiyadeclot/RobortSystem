@@ -33,6 +33,11 @@ HIKCamera::~HIKCamera() {
 
 bool HIKCamera::Open()
 {
+	if (IsOpen())
+	{
+		return true;
+	}
+
 	// Open the specified device
 	int32_t nRet = MV_CC_OpenDevice(this->m_handle);
 	if (MV_OK != nRet)
