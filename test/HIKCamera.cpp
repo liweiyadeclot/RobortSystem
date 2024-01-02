@@ -92,6 +92,7 @@ CameraFrame HIKCamera::GetFrame() {
 		printf("GetFrame fail! nRet [0x%x]\n", nRet);
 		return ret;
 	}
+
 	ret = CameraFrame(rawFrame.stFrameInfo.nHeight, rawFrame.stFrameInfo.nWidth, CV_8UC1, rawFrame.pBufAddr);
 	cv::cvtColor(ret.clone(), ret, cv::COLOR_BayerRG2BGR);
 	return ret;

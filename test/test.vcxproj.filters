@@ -63,6 +63,9 @@
     <ClCompile Include="RobotInfo.cpp">
       <Filter>源文件\RobotInfo</Filter>
     </ClCompile>
+    <ClCompile Include="HIKCamerasController.cpp">
+      <Filter>源文件\Camera\HIKCamera</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClientSocket.h">
@@ -95,13 +98,13 @@
     <ClInclude Include="RobotInfoHandler.h">
       <Filter>头文件\RobotInfo</Filter>
     </ClInclude>
-    <ClInclude Include="HIKCamerasControler.h">
+    <ClInclude Include="HIKCamerasController.h">
       <Filter>头文件\Camera\HIKCamera</Filter>
     </ClInclude>
     <ClInclude Include="HIKCamera.h">
       <Filter>头文件\Camera\HIKCamera</Filter>
     </ClInclude>
-    <ClInclude Include="CameraControlerBase.h">
+    <ClInclude Include="CameraControllerBase.h">
       <Filter>头文件\Camera</Filter>
     </ClInclude>
   </ItemGroup>

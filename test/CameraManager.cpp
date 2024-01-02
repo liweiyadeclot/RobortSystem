@@ -1,6 +1,17 @@
 #include <iostream>
+#include <memory>
 #include "CameraManager.h"
-#include "CameraControlerBase.h"
+#include "CameraControllerBase.h"
+#include "HIKCamerasController.h"
+
+CameraManager* CameraManager::s_Instance = nullptr;
+std::vector<std::shared_ptr<Camera>> CameraManager::m_Cameras;
+std::vector<std::unique_ptr<CameraControllerBase>> CameraManager::m_CameraControllers;
+
+CameraManager::CameraManager()
+{
+	m_CameraControllers.push_back(std::make_unique<HIKCamerasController>(m_Cameras));
+}
 
 CameraManager::~CameraManager()
 {
@@ -42,7 +53,7 @@ std::shared_ptr<Camera> CameraManager::GetOrOpenCamera(CameraIndex index)
 void CameraManager::PrintCamerasInfo()
 {
 	// Print each kind of cameras.
-	for (const auto& cameraControler : m_CameraControlers)
+	for (const auto& cameraControler : m_CameraControllers)
 	{
 		cameraControler->PrintCamerasInfo();
 	}

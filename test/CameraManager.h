@@ -6,12 +6,13 @@
 
 #include "Camera.h"
 
-class CameraControlerBase;
+class CameraControllerBase;
 
 class CameraManager
 {
 public:
-	~CameraManager();
+	CameraManager(const CameraManager& rhs) = delete;
+	const CameraManager& operator=(const CameraManager& rhs) = delete;
 public:
 	using CameraIndex = uint32_t;
 
@@ -24,12 +25,14 @@ public:
 	static void PrintCamerasInfo();
 	
 private:
-	CameraManager() = default;
+	// Init CameraControllers
+	CameraManager();
+
+	~CameraManager();
 private:
 	static std::vector<std::shared_ptr<Camera>> m_Cameras;
 
-
-	static std::vector<std::unique_ptr<CameraControlerBase>> m_CameraControlers;
+	static std::vector<std::unique_ptr<CameraControllerBase>> m_CameraControllers;
 
 	static CameraManager* s_Instance;
 };

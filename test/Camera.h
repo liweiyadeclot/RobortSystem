@@ -5,14 +5,15 @@
 
 class Camera {
 public:
-	virtual ~Camera() = 0;
+	Camera() = default;
+	virtual ~Camera() =  default;
 
 	virtual bool Open() = 0;
 	virtual bool Close() = 0;
 	virtual bool IsOpen() = 0;
 	virtual CameraFrame GetFrame() = 0;
 protected:
-	Camera() = default;
+	// Camera() = default;
 };
 
 

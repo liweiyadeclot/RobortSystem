@@ -5,12 +5,12 @@
 /// CameraControlerBase is the base class of all CameraControler
 /// provides basic function for upper user.
 /// </summary>
-class CameraControlerBase
+class CameraControllerBase
 {
 public:
-	CameraControlerBase() = default;
+	CameraControllerBase() = default;
 
-	virtual ~CameraControlerBase() = 0;
+	virtual ~CameraControllerBase() = default;
 public:
 	// Print CamerasInfo of a kind of Camera
 	virtual void PrintCamerasInfo() = 0;

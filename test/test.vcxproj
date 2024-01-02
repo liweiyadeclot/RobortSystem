@@ -70,6 +70,14 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(SolutionDir);$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Program Files (x86)\opencv\build\x64\vc16\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(SolutionDir);$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Program Files (x86)\opencv\build\x64\vc16\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -137,6 +145,7 @@
     <ClCompile Include="CameraManager.cpp" />
     <ClCompile Include="ClientSocket.cpp" />
     <ClCompile Include="ClientSocketImpl.cpp" />
+    <ClCompile Include="HIKCamerasController.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RobotInfo.cpp" />
     <ClCompile Include="RobotInfoHandler.cpp" />
@@ -144,13 +153,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
-    <ClInclude Include="CameraControlerBase.h" />
+    <ClInclude Include="CameraControllerBase.h" />
     <ClInclude Include="CameraFrame.h" />
     <ClInclude Include="CameraManager.h" />
     <ClInclude Include="ClientSocket.h" />
     <ClInclude Include="ClientSocketImpl.h" />
     <ClInclude Include="HIKCamera.h" />
-    <ClInclude Include="HIKCamerasControler.h" />
+    <ClInclude Include="HIKCamerasController.h" />
     <ClInclude Include="RobotInfo.h" />
     <ClInclude Include="RobotInfoHandler.h" />
     <ClInclude Include="RobotMoveSubSystem.h" />
