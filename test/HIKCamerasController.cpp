@@ -22,7 +22,7 @@ void HIKCamerasController::PrintCamerasInfo()
 	memset(&deviceList, 0, sizeof(MV_CC_DEVICE_INFO_LIST));
 
 	// Enum every HIK device
-	int ResultEnumDecives = MV_CC_EnumDevices(MV_CAMERALINK_DEVICE, &deviceList);
+	int ResultEnumDecives = MV_CC_EnumDevices(MV_USB_DEVICE, &deviceList);
 	if (ResultEnumDecives != MV_OK)
 	{
 		std::cout << "Enum Devices fail! ERROR " << ResultEnumDecives << std::endl;
@@ -64,9 +64,9 @@ void HIKCamerasController::PrintDeviceInfo(MV_CC_DEVICE_INFO* pDeviceInfo)
 		// throw exception
 		std::cout << "The Pointer of pstMVDevInfo is NULL!" << std::endl;
 	}
-	if (pDeviceInfo->nTLayerType == MV_CAMERALINK_DEVICE)
+	if (pDeviceInfo->nTLayerType == MV_USB_DEVICE)
 	{
-		std::cout << "chPortID: [" << pDeviceInfo->SpecialInfo.stCamLInfo.chPortID << "]" << std::endl;
+		std::cout << "chPortID: [" << pDeviceInfo->SpecialInfo.stCamLInfo.chPortID) << "]" << std::endl;
 		std::cout << "chModelName: [" << pDeviceInfo->SpecialInfo.stCamLInfo.chModelName << "]" << std::endl;
 		std::cout << "chFamilyName: [" << pDeviceInfo->SpecialInfo.stCamLInfo.chFamilyName << "]" << std::endl;
 		std::cout << "chDeviceVersion: [" << pDeviceInfo->SpecialInfo.stCamLInfo.chDeviceVersion << "]" << std::endl;
