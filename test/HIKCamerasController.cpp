@@ -66,7 +66,7 @@ void HIKCamerasController::PrintDeviceInfo(MV_CC_DEVICE_INFO* pDeviceInfo)
 	}
 	if (pDeviceInfo->nTLayerType == MV_USB_DEVICE)
 	{
-		std::cout << "chPortID: [" << pDeviceInfo->SpecialInfo.stCamLInfo.chPortID) << "]" << std::endl;
+		std::cout << "chPortID: [" << pDeviceInfo->SpecialInfo.stCamLInfo.chPortID << "]" << std::endl;
 		std::cout << "chModelName: [" << pDeviceInfo->SpecialInfo.stCamLInfo.chModelName << "]" << std::endl;
 		std::cout << "chFamilyName: [" << pDeviceInfo->SpecialInfo.stCamLInfo.chFamilyName << "]" << std::endl;
 		std::cout << "chDeviceVersion: [" << pDeviceInfo->SpecialInfo.stCamLInfo.chDeviceVersion << "]" << std::endl;
