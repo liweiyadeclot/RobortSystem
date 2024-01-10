@@ -94,6 +94,14 @@ CameraFrame HIKCamera::GetFrame() {
 	}
 
 	ret = CameraFrame(rawFrame.stFrameInfo.nHeight, rawFrame.stFrameInfo.nWidth, CV_8UC1, rawFrame.pBufAddr);
+
+	nRet = MV_CC_FreeImageBuffer(this->m_handle, &rawFrame);
+	if (nRet != MV_OK)
+	{
+		printf("Free Frame fail! nRet [0x%x]\n", nRet);
+		return ret;
+	}
+
 	cv::cvtColor(ret.clone(), ret, cv::COLOR_BayerRG2BGR);
 	return ret;
 }
