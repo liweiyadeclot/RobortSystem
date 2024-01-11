@@ -46,6 +46,13 @@ bool HIKCamera::Open()
 		return false;
 	}
 
+	//Set ExposureTime to make image brighter
+	nRet = MV_CC_SetFloatValue(m_handle, "ExposureTime", 80000);
+	if (MV_OK != nRet)
+	{
+		printf("Set ExposureTime fail! nRet [0x%x]\n", nRet);
+	}
+
 	// Start grab image
 	nRet = MV_CC_StartGrabbing(this->m_handle);
 	if (MV_OK != nRet)
