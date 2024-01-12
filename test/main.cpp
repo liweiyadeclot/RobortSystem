@@ -7,5 +7,5 @@
 
 int main(int argc, char** argv)
 {
-	return CaneraCalibrationDemoMain(argc, argv);
+	return CameraCalibrationDemoMain(argc, argv);
 }

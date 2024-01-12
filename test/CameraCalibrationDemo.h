@@ -23,7 +23,7 @@ bool FindChessboradCorners(cv::InputArray image, cv::Size patternSize, cv::Input
 	return found;
 }
 
-int CaneraCalibrationDemoMain(int argc, char** argv)
+int CameraCalibrationDemoMain(int argc, char** argv)
 {
 	const cv::Size BOARD_SIZE(10, 8);
 	const uint32_t SQUARE_SIZE{ 20 };
