@@ -37,6 +37,9 @@
     <Filter Include="源文件\RobotInfo">
       <UniqueIdentifier>{22050519-4e96-4f8a-bffb-8526edc59497}</UniqueIdentifier>
     </Filter>
+    <Filter Include="头文件\Demo">
+      <UniqueIdentifier>{97272b70-2ece-4c40-96a6-fec1a74f153c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -68,12 +71,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ClientSocket.h">
-      <Filter>头文件\Socket</Filter>
-    </ClInclude>
-    <ClInclude Include="ClientSocketImpl.h">
-      <Filter>头文件\Socket</Filter>
-    </ClInclude>
     <ClInclude Include="RobotMoveSubSystem.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -106,6 +103,15 @@
     </ClInclude>
     <ClInclude Include="CameraControllerBase.h">
       <Filter>头文件\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientSocket.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientSocketImpl.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraCalibrationDemo.h">
+      <Filter>头文件\Demo</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
