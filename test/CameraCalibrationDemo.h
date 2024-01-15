@@ -23,10 +23,10 @@ bool FindChessboradCorners(cv::InputArray image, cv::Size patternSize, cv::Input
 	return found;
 }
 
-int CameraCalibrationDemoMain(int argc, char** argv)
+int CameraCalibrationDemoMain(String imagePath, uint8_t boardWidth, uint8_t boardHeight, uint8_t squareSize, cv::InputOutputArray cameraMatrix, cv::InputOutputArray distCoeffs)
 {
-	const cv::Size BOARD_SIZE(10, 8);
-	const uint32_t SQUARE_SIZE{ 20 };
+	const cv::Size BOARD_SIZE(boardWidth, boardHeight);
+	const uint32_t SQUARE_SIZE{ squareSize };
 	cv::Size imageSize;
 	CameraManager* s_CameraManager = CameraManager::GetInstance();
 	std::shared_ptr<Camera> cam = s_CameraManager->GetOrOpenCamera();
@@ -38,7 +38,7 @@ int CameraCalibrationDemoMain(int argc, char** argv)
 	{
 		// 读取一帧图像
 		//CameraFrame frame{ cam->GetFrame() };
-		cv::Mat frame{ cv::imread("D:\\projects\\Calibration3D\\input\\1.jpg") };
+		cv::Mat frame{ cv::imread(imagePath) };
 
 		imageSize = frame.size();
 		cv::Mat view;
@@ -63,6 +63,8 @@ int CameraCalibrationDemoMain(int argc, char** argv)
 		{
 			imagePoints.push_back(corners);
 			cv::drawChessboardCorners(frame, BOARD_SIZE, corners, true);
+			// 缩小，不然我电脑显示不完全
+			cv::resize(frame, view, cv::Size(640, 480));
 		}
 		else
 		{
@@ -93,19 +95,22 @@ int CameraCalibrationDemoMain(int argc, char** argv)
 	// 释放所有窗口
 	cv::destroyAllWindows();
 
-	cv::Mat cameraMatrix;
-	cv::Mat distCoeffs;
+	if (imagePoints.size() < 1)
+	{
+		return 1;
+	}
+
 	std::vector<cv::Mat> rvecs, tvecs;
 	// 开始标定
 	cv::calibrateCamera(objPoints, imagePoints, imageSize, cameraMatrix, distCoeffs, rvecs, tvecs);
-	std::cout << cameraMatrix.at<double>(0, 0)//fx
-		<< "," << cameraMatrix.at<double>(1, 1)//fy
-		<< "," << cameraMatrix.at<double>(0, 2)//cx
-		<< "," << cameraMatrix.at<double>(1, 2)//cy
-		<< "," << distCoeffs.at<double>(0)//k1
-		<< "," << distCoeffs.at<double>(1)//k2
-		<< "," << distCoeffs.at<double>(2)//p1
-		<< "," << distCoeffs.at<double>(3)//p2
-		<< std::endl;
+	//std::cout << cameraMatrix.at<double>(0, 0)//fx
+	//	<< "," << cameraMatrix.at<double>(1, 1)//fy
+	//	<< "," << cameraMatrix.at<double>(0, 2)//cx
+	//	<< "," << cameraMatrix.at<double>(1, 2)//cy
+	//	<< "," << distCoeffs.at<double>(0)//k1
+	//	<< "," << distCoeffs.at<double>(1)//k2
+	//	<< "," << distCoeffs.at<double>(2)//p1
+	//	<< "," << distCoeffs.at<double>(3)//p2
+	//	<< std::endl;
 	return 0;
 }
