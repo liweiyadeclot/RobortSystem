@@ -5,7 +5,7 @@
 #include "CameraManager.h"
 #include "opencv2/opencv.hpp"
 
-bool FindChessboradCorners(cv::InputArray image, cv::Size patternSize, cv::InputOutputArray outCorners,
+bool FindChessboradCorners(cv::InputArray image, const cv::Size patternSize, cv::InputOutputArray outCorners,
 	int flags = cv::CALIB_CB_ADAPTIVE_THRESH + cv::CALIB_CB_NORMALIZE_IMAGE)
 {
 	cv::Mat input = image.getMat();
@@ -23,10 +23,21 @@ bool FindChessboradCorners(cv::InputArray image, cv::Size patternSize, cv::Input
 	return found;
 }
 
-int CameraCalibrationDemoMain(String imagePath, uint8_t boardWidth, uint8_t boardHeight, uint8_t squareSize, cv::InputOutputArray cameraMatrix, cv::InputOutputArray distCoeffs)
+void genChessBoardObjectPoints(const cv::Size BOARD_SIZE, const uint32_t SQUARE_SIZE, const std::vector<std::vector<cv::Point2f> >& imagePoints, std::vector<std::vector<cv::Point3f>>& objPoints)
+{
+	std::vector<cv::Point3f> corners;
+	for (int i = 0; i < BOARD_SIZE.height; ++i) {
+		for (int j = 0; j < BOARD_SIZE.width; ++j) {
+			corners.emplace_back(j * SQUARE_SIZE, i * SQUARE_SIZE, 0);
+		}
+	}
+	objPoints.resize(imagePoints.size(), corners);
+}
+
+int CameraCalibrationDemoMain(const std::vector<cv::Mat>& frameVec, uint8_t boardWidth, uint8_t boardHeight, double squareSize, cv::InputOutputArray cameraMatrix, cv::InputOutputArray distCoeffs)
 {
 	const cv::Size BOARD_SIZE(boardWidth, boardHeight);
-	const uint32_t SQUARE_SIZE{ squareSize };
+	const double SQUARE_SIZE{ squareSize };
 	cv::Size imageSize;
 	CameraManager* s_CameraManager = CameraManager::GetInstance();
 	std::shared_ptr<Camera> cam = s_CameraManager->GetOrOpenCamera();
@@ -34,28 +45,28 @@ int CameraCalibrationDemoMain(String imagePath, uint8_t boardWidth, uint8_t boar
 
 	std::vector<std::vector<cv::Point2f> > imagePoints;
 	// 循环读取摄像头捕捉到的帧并查找棋盘格点位
-	while (true)
+	for (cv::Mat frame : frameVec)
 	{
 		// 读取一帧图像
 		//CameraFrame frame{ cam->GetFrame() };
-		cv::Mat frame{ cv::imread(imagePath) };
+		//cv::Mat frame{ cv::imread(imagePath) };
 
 		imageSize = frame.size();
-		cv::Mat view;
+		//cv::Mat view;
 		// 缩小，不然我电脑显示不完全
-		cv::resize(frame, view, cv::Size(640, 480));
-		// 显示图像
-		cv::imshow("Camera", view);
-		// 等待回车键按下则采用，其他键按下则跳过，按下q键退出循环开始标定
-		int key = cv::waitKey(1);
-		if (key == 'q')
-		{
-			break;
-		}
+		//cv::resize(frame, view, cv::Size(640, 480));
+		//// 显示图像
+		//cv::imshow("Camera", view);
+		//// 等待回车键按下则采用，其他键按下则跳过，按下q键退出循环开始标定
+		//int key = cv::waitKey(1);
+		//if (key == 'q')
+		//{
+			//break;
+		/*}
 		else if (key != '\r')
 		{
 			continue;
-		}
+		}*/
 
 
 		std::vector<cv::Point2f> corners;
@@ -64,34 +75,26 @@ int CameraCalibrationDemoMain(String imagePath, uint8_t boardWidth, uint8_t boar
 			imagePoints.push_back(corners);
 			cv::drawChessboardCorners(frame, BOARD_SIZE, corners, true);
 			// 缩小，不然我电脑显示不完全
-			cv::resize(frame, view, cv::Size(640, 480));
+			//cv::resize(frame, view, cv::Size(640, 480));
 		}
 		else
 		{
-			int baseLine = 0;
-			std::string msg = "Corners not found";
-			cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseLine);
-			cv::Point textOrigin(view.cols - 2 * textSize.width - 10, view.rows - 2 * baseLine - 10);
-			cv::putText(view, msg, textOrigin, 1, 1, cv::Scalar(0, 0, 255));
+			//int baseLine = 0;
+			//std::string msg = "Corners not found";
+			//cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseLine);
+			//cv::Point textOrigin(view.cols - 2 * textSize.width - 10, view.rows - 2 * baseLine - 10);
+			//cv::putText(view, msg, textOrigin, 1, 1, cv::Scalar(0, 0, 255));
 		}
 
-		// 显示找到的角点
-		cv::imshow("Camera", view);
+		//// 显示找到的角点
+		//cv::imshow("Camera", view);
 
-		// 等待任意键按下，按下q键退出循环开始标定
-		if (cv::waitKey() == 'q')
-			break;
+		//// 等待任意键按下，按下q键退出循环开始标定
+		//if (cv::waitKey() == 'q')
+			//break;
 	}
 	std::vector<std::vector<cv::Point3f>> objPoints{};
-	{
-		std::vector<cv::Point3f> corners;
-		for (int i = 0; i < BOARD_SIZE.height; ++i) {
-			for (int j = 0; j < BOARD_SIZE.width; ++j) {
-				corners.emplace_back(j * SQUARE_SIZE, i * SQUARE_SIZE, 0);
-			}
-		}
-		objPoints.resize(imagePoints.size(), corners);
-	}
+	genChessBoardObjectPoints(BOARD_SIZE, SQUARE_SIZE, imagePoints, objPoints);
 	// 释放所有窗口
 	cv::destroyAllWindows();
 

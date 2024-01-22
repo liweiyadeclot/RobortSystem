@@ -6,6 +6,18 @@ RobotMoveSubSystem::RobotMoveSubSystem()
 	m_MovepImpl = std::make_unique<RobotInfoHandler>();
 }
 
+RobotMoveSubSystem::~RobotMoveSubSystem() = default;
+
+void RobotMoveSubSystem::MoveToPos(double x, double y, double z, double u, double v, double w)
+{
+    m_MovepImpl->SendPos(RobotInfo::RobotPos(x,y,z,u,v,w));
+}
+
+void RobotMoveSubSystem::MoveToJoint(double x, double y, double z, double u, double v, double w)
+{
+    m_MovepImpl->SendJoint(RobotInfo::RobotJoint(x, y, z, u, v, w));
+}
+
 void RobotMoveSubSystem::MoveX(double distance) {
     // MoveX函数的实现
 }

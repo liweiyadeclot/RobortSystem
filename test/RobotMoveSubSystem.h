@@ -8,6 +8,10 @@ class RobotMoveSubSystem
 {
 public:
 	RobotMoveSubSystem();
+	~RobotMoveSubSystem();
+
+	void MoveToPos(double x, double y, double z, double u, double v, double w);
+	void MoveToJoint(double x, double y, double z, double u, double v, double w);
 
 	void MoveX(double distance);
 	void MoveY(double distance);

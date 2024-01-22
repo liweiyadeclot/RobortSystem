@@ -113,5 +113,8 @@
     <ClInclude Include="CameraCalibrationDemo.h">
       <Filter>头文件\Demo</Filter>
     </ClInclude>
+    <ClInclude Include="EyeInHandCalibrationDemo.h">
+      <Filter>头文件\Demo</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

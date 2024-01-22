@@ -9,11 +9,12 @@ class RobotInfoHandler
 public:
 	RobotInfoHandler() = default;
 
-private:
 	bool SendPos(const RobotInfo::RobotPos& pos);
+	bool SendJoint(const RobotInfo::RobotJoint& joint);
 	std::string RobotPosToString(const RobotInfo::RobotPos& pos);
+	std::string RobotJointToString(const RobotInfo::RobotJoint& joint);
 private:
-	static const int TCP_PORT = 9000;
+	static const int TCP_PORT = 800;
 	static const std::string TCP_IP_ADDR;
 	ClientSocket m_Socket = ClientSocket(TCP_IP_ADDR, TCP_PORT);
 	RobotInfo m_RInfo;

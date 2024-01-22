@@ -159,6 +159,7 @@
     <ClInclude Include="CameraManager.h" />
     <ClInclude Include="ClientSocket.h" />
     <ClInclude Include="ClientSocketImpl.h" />
+    <ClInclude Include="EyeInHandCalibrationDemo.h" />
     <ClInclude Include="HIKCamera.h" />
     <ClInclude Include="HIKCamerasController.h" />
     <ClInclude Include="RobotInfo.h" />
