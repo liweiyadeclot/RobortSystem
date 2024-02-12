@@ -1,7 +1,7 @@
-#include "EyeInHandCalibrationDemo.h"
+#include "CustomSystemCalibration.h"
 
 int main(int argc, char** argv)
 {
-	return EyeInHandCalibration();
+	return TestCustomSystemCalib();
 }
 

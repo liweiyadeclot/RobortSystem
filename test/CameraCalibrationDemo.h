@@ -5,7 +5,7 @@
 #include "CameraManager.h"
 #include "opencv2/opencv.hpp"
 
-bool FindChessboradCorners(cv::InputArray image, const cv::Size patternSize, cv::InputOutputArray outCorners,
+bool FindChessboradCorners(const cv::InputArray image, const cv::Size patternSize, cv::InputOutputArray outCorners,
 	int flags = cv::CALIB_CB_ADAPTIVE_THRESH + cv::CALIB_CB_NORMALIZE_IMAGE)
 {
 	cv::Mat input = image.getMat();
@@ -73,7 +73,7 @@ int CameraCalibrationDemoMain(const std::vector<cv::Mat>& frameVec, uint8_t boar
 		if (true == FindChessboradCorners(frame, BOARD_SIZE, corners))
 		{
 			imagePoints.push_back(corners);
-			cv::drawChessboardCorners(frame, BOARD_SIZE, corners, true);
+			//cv::drawChessboardCorners(frame, BOARD_SIZE, corners, true);
 			// 缩小，不然我电脑显示不完全
 			//cv::resize(frame, view, cv::Size(640, 480));
 		}
