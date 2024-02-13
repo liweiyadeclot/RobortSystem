@@ -12,7 +12,7 @@ std::vector<T> RotationMatrixRotate(const double* R, const T* P)
 	std::vector<T> ret{ T(0),T(0),T(0) };
 	for (int i = 0; i < 3; i++)
 	{
-		ret[i] = R[3 * i] * P[0] + R[3 * i + 1] * P[1] + R[3 * i + 2] * P[2];
+		ret[i] = T(R[3 * i]) * T(P[0]) + T(R[3 * i + 1]) * T(P[1]) + T(R[3 * i + 2]) * T(P[2]);
 	}
 	return ret;
 }
@@ -23,7 +23,7 @@ std::vector<T> RotationMatrixRotate1(const T* R, const double* P)
 	std::vector<T> ret{ T(0),T(0),T(0) };
 	for (int i = 0; i < 3; i++)
 	{
-		ret[i] = R[3 * i] * P[0] + R[3 * i + 1] * P[1] + R[3 * i + 2] * P[2];
+		ret[i] = T(R[3 * i]) * T(P[0]) + T(R[3 * i + 1]) * T(P[1]) + T(R[3 * i + 2]) * T(P[2]);
 	}
 	return ret;
 }
@@ -47,11 +47,11 @@ public:
 	{
 		std::vector<T> P_robot{ RotationMatrixRotate1(R_custom2robot, m_P_custom) };
 		for (int i = 0; i < 3; i++) P_robot[i] += t_custom2robot[i];
-		std::vector<T> P_end{ RotationMatrixRotate(m_R_robot2end, P_robot.data()) };
+		std::vector<T> P_end{ RotationMatrixRotate(m_R_robot2end, ((T*)P_robot.data())) };
 		for (int i = 0; i < 3; i++) P_end[i] += m_t_robot2end[i];
-		std::vector<T> P_camera{ RotationMatrixRotate(m_R_end2camera, P_end.data()) };
+		std::vector<T> P_camera{ RotationMatrixRotate(m_R_end2camera, ((T*)P_end.data())) };
 		for (int i = 0; i < 3; i++) P_camera[i] += m_t_end2camera[i];
-		std::vector<T> P_pixel_esti{ RotationMatrixRotate(m_cameraMatrix, P_camera.data()) };
+		std::vector<T> P_pixel_esti{ RotationMatrixRotate(m_cameraMatrix, ((T*)P_camera.data())) };
 		for (int i = 0; i < 3; i++) P_pixel_esti[i] /= P_camera[2];
 
 		residual[0] = T(m_P_pixel[0]) - P_pixel_esti[0];
@@ -122,16 +122,21 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 	// Build the problem.
 	ceres::Problem problem;
 
+	cv::Mat R_end2camera{};
+	cv::transpose(R_cam2gripper, R_end2camera);
+	cv::Mat t_end2camera{ -R_end2camera * t_cam2gripper };
 	// Set up the only cost function (also known as residual). This uses
 	// auto-differentiation to obtain the derivative (jacobian).
 	for (int i = 0; i < imagePoints.size(); i++)
 	{
 		for (int j = 0; j < imagePoints[i].size(); j++)
 		{
-
+			cv::Mat R_robot2end{};
+			cv::transpose(R_gripper2baseVec[i], R_robot2end);
+			cv::Mat t_robot2end{-(R_robot2end*t_gripper2baseVec[i])};
 			problem.AddResidualBlock(
-				new ceres::AutoDiffCostFunction<LeastSquareCostFunctor, 2, 9, 3>(new LeastSquareCostFunctor(R_gripper2baseVec[i], t_gripper2baseVec[i], R_cam2gripper, t_cam2gripper, cameraMatrix, cv::Mat(objPoints[i][j]), cv::Mat(imagePoints[i][j]))),
-				new ceres::CauchyLoss(1),
+				new ceres::AutoDiffCostFunction<LeastSquareCostFunctor, 2, 9, 3>(new LeastSquareCostFunctor(R_robot2end, t_robot2end, R_end2camera, t_end2camera, cameraMatrix, cv::Mat(objPoints[i][j]), cv::Mat(imagePoints[i][j]))),
+				new ceres::CauchyLoss(1.0),
 				R_custom2robot, t_custom2robot);
 		}
 	}
@@ -147,6 +152,16 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 	std::cout << summary.BriefReport() << std::endl
 		<< "R_custom2robot:" << cv::Mat(3, 3, CV_64F, R_custom2robot) << std::endl
 		<< "t_custom2robot:" << cv::Mat(3, 1, CV_64F, t_custom2robot) << std::endl;
+	cv::Mat obj{ cv::Mat(3,1,CV_64F) };
+	obj.at<double>(0, 0) = objPoints[0][0].x;
+	obj.at<double>(1, 0) = objPoints[0][0].y;
+	obj.at<double>(2, 0) = objPoints[0][0].z;
+	cv::Mat estimateP_robot{ cv::Mat(3,3,CV_64F,R_custom2robot)*obj + cv::Mat(3, 1, CV_64F, t_custom2robot) };
+	cv::Mat R_robot2end{};
+	cv::transpose(R_gripper2baseVec[0], R_robot2end);
+	cv::Mat estimateP_end{ R_robot2end * estimateP_robot + (-R_robot2end * t_gripper2baseVec[0]) };
+	cv::Mat estimateP_camera{ R_end2camera * estimateP_end + t_end2camera };
+	std::cout << "imagePoints[0][0]:" << imagePoints[0][0] << ", reprojection:" << cameraMatrix * estimateP_camera / estimateP_camera.at<double>(2, 0);
 	return 0;
 }
 
