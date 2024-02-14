@@ -130,6 +130,13 @@ int EyeInHandCalibration(const std::vector<cv::Mat> images, const cv::Size& BOAR
 	cv::Rodrigues(rvec_obj2camVec[0], R_obj2cam);
 	cv::Mat estimateP_camera{ R_obj2cam * obj + t_obj2camVec[0]};
 	std::cout << "imagePoints[0][0]:" << imagePoints[0][0] << ", reprojection:" << cameraMatrix * estimateP_camera / estimateP_camera.at<double>(2, 0);
+
+	obj.at<double>(0, 0) = objPoints[0][1].x;
+	obj.at<double>(1, 0) = objPoints[0][1].y;
+	obj.at<double>(2, 0) = objPoints[0][1].z;
+	cv::Rodrigues(rvec_obj2camVec[0], R_obj2cam);
+	estimateP_camera = R_obj2cam * obj + t_obj2camVec[0];
+	std::cout << "imagePoints[0][1]:" << imagePoints[0][1] << ", reprojection:" << cameraMatrix * estimateP_camera / estimateP_camera.at<double>(2, 0);
 	//cv::Mat R_obj2cam;
 	//cv::Rodrigues(rvecVec[0], R_obj2cam);
 
