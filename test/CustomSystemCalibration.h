@@ -8,6 +8,16 @@
 #include "EyeInHandCalibrationDemo.h"
 
 template <typename T1, typename T2, typename T3>
+void DistortImagePoint(const T1 cameraMatrix[9], const T1 distCoeff[5], const T2 src[2], T3 dst[2])
+{
+	float k1{ distCoeff[0] }, k2{ distCoeff[1] }, p1{ distCoeff[2] }, p2{ distCoeff[3] }, k3{ distCoeff[4] };
+	//unaccomplished
+	float u{ src[0] }, v{ src[1] }, x{}, y{}, & dstU{ dst[0] }, & dstV{ dst[1] };
+	float r_sqr{ x * x + y * y };
+	dstU = (1 ) * x;
+}
+
+template <typename T1, typename T2, typename T3>
 void Matrix3x3Mul3x1(const T1 m3x3[9], const T2 m3x1[3], T3 result[3])
 {
 	for (int i = 0; i < 3; i++)
@@ -34,33 +44,36 @@ void DeepCopy(const T* src, T* dst, int copyLen)
 	}
 }
 
-class LeastSquareCostFunctor
+class ReprojectionCostFunctor
 {
 public:
-	LeastSquareCostFunctor(cv::Mat R_robot2end, cv::Mat t_robot2end, cv::Mat R_end2camera, cv::Mat t_end2camera, cv::Mat cameraMatrix, cv::Mat P_custom, cv::Mat P_pixel)
+	ReprojectionCostFunctor(cv::Mat R_robot2end, cv::Mat t_robot2end, cv::Mat R_end2camera, cv::Mat t_end2camera, cv::Mat cameraMatrix, cv::Mat distCoeff, cv::Mat P_custom, cv::Mat P_pixel, bool debug = false)
 		:m_q_robot2end(),
 		m_t_robot2end(),
 		m_q_end2camera(),
 		m_t_end2camera(),
 		m_cameraMatrix(),
+		m_distCoeff(),
 		m_P_custom(),
-		m_P_pixel()
+		m_P_pixel(),
+		m_debug(debug)
 	{
 		ceres::RotationMatrixToQuaternion((double*)R_robot2end.data, m_q_robot2end);
 		DeepCopy((double*)t_robot2end.data, m_t_robot2end, 3);
 		ceres::RotationMatrixToQuaternion((double*)R_end2camera.data, m_q_end2camera);
 		DeepCopy((double*)t_end2camera.data, m_t_end2camera, 3);
 		DeepCopy((double*)cameraMatrix.data, m_cameraMatrix, 9);
+		DeepCopy((double*)distCoeff.data, m_distCoeff, 5);
 		ArrayTypeConvert((float*)P_custom.data, m_P_custom, 3);
 		ArrayTypeConvert((float*)P_pixel.data, m_P_pixel, 2);
 	}
 
-	~LeastSquareCostFunctor()
+	~ReprojectionCostFunctor()
 	{
 	}
 
 	template <typename T>
-	bool operator()(const T* const q_custom2robot, const T* const t_custom2robot, T* residual) const
+	bool operator()(const T const q_custom2robot[4], const T const t_custom2robot[3], T residual[1]) const
 	{
 		T P_custom[3]{};
 		ArrayTypeConvert(m_P_custom, P_custom, 3);
@@ -68,14 +81,12 @@ public:
 		T P_robot[3]{};
 		ceres::QuaternionRotatePoint(q_custom2robot, P_custom, P_robot);
 		for (int i = 0; i < 3; i++) P_robot[i] += t_custom2robot[i];
-
 		T q_robot2end[4]{};
 		ArrayTypeConvert(m_q_robot2end, q_robot2end, 4);
 
 		T P_end[3]{};
 		ceres::QuaternionRotatePoint(q_robot2end, P_robot, P_end);
 		for (int i = 0; i < 3; i++) P_end[i] += m_t_robot2end[i];
-
 		T q_end2camera[4]{};
 		ArrayTypeConvert(m_q_end2camera, q_end2camera, 4);
 
@@ -86,11 +97,13 @@ public:
 		T P_pixel_esti[3]{};
 		Matrix3x3Mul3x1(m_cameraMatrix, P_camera, P_pixel_esti);
 		for (int i = 0; i < 3; i++) P_pixel_esti[i] /= P_camera[2];
-
 		residual[0] = (T(m_P_pixel[0]) - P_pixel_esti[0]) * (T(m_P_pixel[0]) - P_pixel_esti[0])
 			+ (T(m_P_pixel[1]) - P_pixel_esti[1]) * (T(m_P_pixel[1]) - P_pixel_esti[1]);
 
-		std::cout << "m_P_pixel:" << cv::Mat(2, 1, CV_64F, (double*)m_P_pixel) << ", P_pixel_esti:" << cv::Mat(3, 1, CV_64F, (double*)P_pixel_esti) << std::endl;
+		if (m_debug)
+		{
+			std::cout << "m_P_pixel:" << cv::Mat(2, 1, CV_64F, (double*)m_P_pixel) << ", P_pixel_esti:" << cv::Mat(3, 1, CV_64F, (double*)P_pixel_esti) << std::endl;
+		}
 
 		return true;
 	}
@@ -100,8 +113,10 @@ private:
 	double m_q_end2camera[4];
 	double m_t_end2camera[3];
 	double m_cameraMatrix[9];
+	double m_distCoeff[5];
 	double m_P_custom[3];
 	double m_P_pixel[2];
+	bool m_debug;
 };
 
 int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& BOARD_SIZE, const uint32_t& SQUARE_SIZE, const std::vector<std::vector<double>> robotPosVec)
@@ -121,10 +136,13 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 		std::vector<cv::Point2f> corners{};
 		if (FindChessboradCorners(origin, BOARD_SIZE, corners))
 		{
-			imagePoints.push_back(corners);
+			std::vector<cv::Point2f> undistortCorners{};
+			cv::undistortImagePoints(corners, undistortCorners, cameraMatrix, distCoeff);
+			imagePoints.push_back(undistortCorners);
 		}
 
 	}
+
 
 	genChessBoardObjectPoints(BOARD_SIZE, SQUARE_SIZE, imagePoints, objPoints);
 	std::vector<cv::Mat> R_gripper2baseVec, t_gripper2baseVec, rvec_obj2camVec, t_obj2camVec;
@@ -171,8 +189,9 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 			cv::transpose(R_gripper2baseVec[i], R_robot2end);
 			cv::Mat t_robot2end{ -(R_robot2end * t_gripper2baseVec[i]) };
 			problem.AddResidualBlock(
-				new ceres::AutoDiffCostFunction<LeastSquareCostFunctor, 1, 4, 3>(new LeastSquareCostFunctor(R_robot2end, t_robot2end, R_end2camera, t_end2camera, cameraMatrix, cv::Mat(objPoints[i][j]), cv::Mat(imagePoints[i][j]))),
+				new ceres::AutoDiffCostFunction<ReprojectionCostFunctor, 1, 4, 3>(new ReprojectionCostFunctor(R_robot2end, t_robot2end, R_end2camera, t_end2camera, cameraMatrix, distCoeff, cv::Mat(objPoints[i][j]), cv::Mat(imagePoints[i][j]))),
 				new ceres::CauchyLoss(1.0),
+				//nullptr,
 				q_custom2robot, t_custom2robot);
 		}
 	}
@@ -209,9 +228,10 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 			cv::Mat t_robot2end{ -(R_robot2end * t_gripper2baseVec[i]) };
 			estimateP_end = R_robot2end * estimateP_robot + t_robot2end;
 			estimateP_camera = R_end2camera * estimateP_end + t_end2camera;
-			std::cout << "imagePoints[" << i << "][" << j << "]:" << imagePoints[i][j] << ", reprojection:" << (cameraMatrix * estimateP_camera) / estimateP_camera.at<double>(2, 0) << std::endl;
+			//std::cout << "imagePoints[" << i << "][" << j << "]:" << imagePoints[i][j] << ", reprojection:" << (cameraMatrix * estimateP_camera) / estimateP_camera.at<double>(2, 0) << std::endl;
 			double reprojectionError{ 0 };
-			LeastSquareCostFunctor(R_robot2end, t_robot2end, R_end2camera, t_end2camera, cameraMatrix, cv::Mat(objPoints[i][j]), cv::Mat(imagePoints[i][j]))(q_custom2robot, t_custom2robot, &reprojectionError);
+			ReprojectionCostFunctor functor{ ReprojectionCostFunctor(R_robot2end, t_robot2end, R_end2camera, t_end2camera, cameraMatrix, distCoeff, cv::Mat(objPoints[i][j]), cv::Mat(imagePoints[i][j]), true) };
+			functor(q_custom2robot, t_custom2robot, &reprojectionError);
 			std::cout << "reprojectionError:" << reprojectionError << std::endl;
 		}
 	}
@@ -313,6 +333,33 @@ int CustomSystemCalibration1(const std::vector<cv::Mat> images, const cv::Size& 
 	}
 	t = t / t_obj2camVec.size();
 	std::cout << "t:" << t << std::endl;
+
+	cv::Mat obj{ cv::Mat(3,1,CV_64F) };
+	cv::Mat estimateP_robot{};
+	cv::Mat R_robot2end{};
+	cv::Mat t_robot2end{};
+	cv::Mat estimateP_end{};
+	cv::Mat estimateP_camera{};
+
+	//for (int i = 0; i < imagePoints.size(); i++)
+	//{
+	//	for (int j = 0; j < imagePoints[i].size(); j += 15)
+	//	{
+	//		obj.at<double>(0, 0) = objPoints[i][j].x;
+	//		obj.at<double>(1, 0) = objPoints[i][j].y;
+	//		obj.at<double>(2, 0) = objPoints[i][j].z;
+	//		estimateP_robot = cv::Mat(3, 3, CV_64F, R_custom2robot) * obj + cv::Mat(3, 1, CV_64F, t_custom2robot);
+	//		cv::transpose(R_gripper2baseVec[i], R_robot2end);
+	//		cv::Mat t_robot2end{ -(R_robot2end * t_gripper2baseVec[i]) };
+	//		estimateP_end = R_robot2end * estimateP_robot + t_robot2end;
+	//		estimateP_camera = R_end2camera * estimateP_end + t_end2camera;
+	//		//std::cout << "imagePoints[" << i << "][" << j << "]:" << imagePoints[i][j] << ", reprojection:" << (cameraMatrix * estimateP_camera) / estimateP_camera.at<double>(2, 0) << std::endl;
+	//		double reprojectionError{ 0 };
+	//		ReprojectionCostFunctor functor{ ReprojectionCostFunctor(R_robot2end, t_robot2end, R_end2camera, t_end2camera, cameraMatrix, distCoeff, cv::Mat(objPoints[i][j]), cv::Mat(imagePoints[i][j]), true) };
+	//		functor(q_custom2robot, t_custom2robot, &reprojectionError);
+	//		std::cout << "reprojectionError:" << reprojectionError << std::endl;
+	//	}
+	//}
 	return 0;
 }
 
