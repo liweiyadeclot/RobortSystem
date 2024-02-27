@@ -82,7 +82,8 @@ public:
 		const T q_end2camera[4],
 		const T t_end2camera[3],
 		const T cameraMatrix[9],
-		T P_pixel_esti[3])
+		T P_pixel_esti[3],
+		bool debug = false)
 	{
 		T P_robot[3]{};
 		ceres::QuaternionRotatePoint(q_custom2robot, P_custom, P_robot);
@@ -98,6 +99,8 @@ public:
 
 		Matrix3x3Mul3x1(cameraMatrix, P_camera, P_pixel_esti);
 		for (int i = 0; i < 3; i++) P_pixel_esti[i] /= P_camera[2];
+
+		if(debug)std::cout << "P_custom:" << cv::Mat(3, 1, CV_64F, (void*)P_custom) << ", P_robot:" << cv::Mat(3, 1, CV_64F, (void*)P_robot) << ", P_end:" << cv::Mat(3, 1, CV_64F, (void*)P_end) << ", P_camera:" << cv::Mat(3,1,CV_64F,(void*)P_camera) << std::endl;
 		return true;
 	}
 
@@ -202,11 +205,12 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 			double q_robot2end[4], q_end2camera[4];
 			ceres::RotationMatrixToQuaternion((double*)R_base2gripperVec[i].data, q_robot2end);
 			ceres::RotationMatrixToQuaternion((double*)R_gripper2cam.data, q_end2camera);
+			bool debug{i == 0 && j == 0};
 			ReprojectionCostFunctor::projection((double*)obj.data,
 				q_custom2robot, t_custom2robot,
 				q_robot2end, (double*)t_base2gripperVec[i].data,
 				q_end2camera, (double*)t_gripper2cam.data,
-				(double*)cameraMatrix.data, (double*)projPoint.data);
+				(double*)cameraMatrix.data, (double*)projPoint.data, debug);
 			imagePoint.x = projPoint.at<double>(0, 0);
 			imagePoint.y = projPoint.at<double>(1, 0);
 			reprojPoints.emplace_back(imagePoint);

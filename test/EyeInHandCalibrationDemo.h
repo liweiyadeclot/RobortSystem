@@ -144,6 +144,7 @@ int EyeInHandCalibration(const std::vector<cv::Mat> images, const cv::Size& BOAR
 			estimateP_gripper = R_base2gripperVec[i] * estimateP_base + t_base2gripperVec[i];
 			estimateP_camera = R_gripper2cam * estimateP_gripper + t_gripper2cam;
 			estimateP_cameraVec.emplace_back(estimateP_camera);
+			if(i ==0 && j==0)std::cout << "P_custom:" << obj << ", P_robot:" << estimateP_base << ", P_end:" << estimateP_gripper << ", P_camera:" << estimateP_camera << std::endl;
 		}
 		cv::projectPoints(estimateP_cameraVec, cv::Mat::eye(3, 3, CV_64F), cv::Mat::zeros(3, 1, CV_64F), cameraMatrix, distCoeff, reprojPoints);
 		cv::Mat view{ images[i].clone() };
