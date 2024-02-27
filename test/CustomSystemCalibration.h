@@ -44,6 +44,13 @@ void DeepCopy(const T* src, T* dst, int copyLen)
 	}
 }
 
+void CVRotationMatrixToQuaternion(const cv::Mat R, double q[4])
+{
+	cv::Mat R_colMajor;
+	cv::transpose(R, R_colMajor);
+	ceres::RotationMatrixToQuaternion((double*)R_colMajor.data, q);
+}
+
 class ReprojectionCostFunctor
 {
 public:
@@ -58,9 +65,10 @@ public:
 		m_P_pixel(),
 		m_debug(debug)
 	{
-		ceres::RotationMatrixToQuaternion((double*)R_robot2end.data, m_q_robot2end);
+
+		CVRotationMatrixToQuaternion(R_robot2end, m_q_robot2end);
 		DeepCopy((double*)t_robot2end.data, m_t_robot2end, 3);
-		ceres::RotationMatrixToQuaternion((double*)R_end2camera.data, m_q_end2camera);
+		CVRotationMatrixToQuaternion(R_end2camera, m_q_end2camera);
 		DeepCopy((double*)t_end2camera.data, m_t_end2camera, 3);
 		DeepCopy((double*)cameraMatrix.data, m_cameraMatrix, 9);
 		DeepCopy((double*)distCoeff.data, m_distCoeff, 5);
@@ -99,7 +107,7 @@ public:
 
 		Matrix3x3Mul3x1(cameraMatrix, P_camera, P_pixel_esti);
 		for (int i = 0; i < 3; i++) P_pixel_esti[i] /= P_camera[2];
-
+		if (debug)std::cout << "t_custom2robot:" << cv::Mat(3, 1, CV_64F, (void*)t_custom2robot) << ",t_robot2end:" << cv::Mat(3, 1, CV_64F, (void*)t_robot2end) << ",t_end2camera:" << cv::Mat(3, 1, CV_64F, (void*)t_end2camera);
 		if(debug)std::cout << "P_custom:" << cv::Mat(3, 1, CV_64F, (void*)P_custom) << ", P_robot:" << cv::Mat(3, 1, CV_64F, (void*)P_robot) << ", P_end:" << cv::Mat(3, 1, CV_64F, (void*)P_end) << ", P_camera:" << cv::Mat(3,1,CV_64F,(void*)P_camera) << std::endl;
 		return true;
 	}
@@ -188,7 +196,7 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 	double q_custom2robot[4] = { 1,0,0,0 };
 	double t_custom2robot[3] = { 0,0,0 };
 	//给出优化的初值
-	ceres::RotationMatrixToQuaternion((double*)R_obj2base_init.data, q_custom2robot);
+	CVRotationMatrixToQuaternion(R_obj2base_init, q_custom2robot);
 	DeepCopy((double*)t_obj2base_init.data, t_custom2robot, 3);
 	cv::Mat obj{ cv::Mat(3,1,CV_64F) };
 	for (int i = 0; i < imagePoints.size(); i++)
@@ -203,8 +211,13 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 			obj.at<double>(2, 0) = objPoints[i][j].z;
 
 			double q_robot2end[4], q_end2camera[4];
-			ceres::RotationMatrixToQuaternion((double*)R_base2gripperVec[i].data, q_robot2end);
-			ceres::RotationMatrixToQuaternion((double*)R_gripper2cam.data, q_end2camera);
+			CVRotationMatrixToQuaternion(R_base2gripperVec[i], q_robot2end);
+
+			double test[9];
+			ceres::QuaternionToRotation(q_robot2end, test);
+			std::cout << "********************Assert:" << cv::Mat(3, 3, CV_64F, test) << "==" << R_base2gripperVec[i] << std::endl;
+
+			CVRotationMatrixToQuaternion(R_gripper2cam, q_end2camera);
 			bool debug{i == 0 && j == 0};
 			ReprojectionCostFunctor::projection((double*)obj.data,
 				q_custom2robot, t_custom2robot,

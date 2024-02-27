@@ -10,7 +10,7 @@
 #include "RobotMoveSubSystem.h"
 #include "CameraCalibrationDemo.h"
 
-void RobotPosToRT(std::vector<double> pos, cv::Mat& R_base2gripper, cv::Mat& t_base2gripper)
+void RobotPosToRT(const std::vector<double> pos, cv::Mat& R_base2gripper, cv::Mat& t_base2gripper)
 {
 	double rz{ pos[3] * CV_PI / 180 }, ry{ pos[4] * CV_PI / 180 }, rx{ pos[5] * CV_PI / 180 };
 	double sinRz{ sin(rz) }, cosRz{ cos(rz) }, sinRy{ sin(ry) }, cosRy{ cos(ry) }, sinRx{ sin(rx) }, cosRx{ cos(rx) };
@@ -144,6 +144,7 @@ int EyeInHandCalibration(const std::vector<cv::Mat> images, const cv::Size& BOAR
 			estimateP_gripper = R_base2gripperVec[i] * estimateP_base + t_base2gripperVec[i];
 			estimateP_camera = R_gripper2cam * estimateP_gripper + t_gripper2cam;
 			estimateP_cameraVec.emplace_back(estimateP_camera);
+			if (i == 0 && j == 0)std::cout << "t_custom2robot:" << t_obj2base << ",t_robot2end:" << t_base2gripperVec[i] << ",t_end2camera:" << t_gripper2cam;
 			if(i ==0 && j==0)std::cout << "P_custom:" << obj << ", P_robot:" << estimateP_base << ", P_end:" << estimateP_gripper << ", P_camera:" << estimateP_camera << std::endl;
 		}
 		cv::projectPoints(estimateP_cameraVec, cv::Mat::eye(3, 3, CV_64F), cv::Mat::zeros(3, 1, CV_64F), cameraMatrix, distCoeff, reprojPoints);
