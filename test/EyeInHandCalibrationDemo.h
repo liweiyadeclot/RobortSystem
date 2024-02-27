@@ -10,7 +10,7 @@
 #include "RobotMoveSubSystem.h"
 #include "CameraCalibrationDemo.h"
 
-void RobotPosToRT(std::vector<double> pos, cv::Mat& R_gripper2base, cv::Mat& t_gripper2base)
+void RobotPosToRT(std::vector<double> pos, cv::Mat& R_base2gripper, cv::Mat& t_base2gripper)
 {
 	double rz{ pos[3] * CV_PI / 180 }, ry{ pos[4] * CV_PI / 180 }, rx{ pos[5] * CV_PI / 180 };
 	double sinRz{ sin(rz) }, cosRz{ cos(rz) }, sinRy{ sin(ry) }, cosRy{ cos(ry) }, sinRx{ sin(rx) }, cosRx{ cos(rx) };
@@ -34,12 +34,12 @@ void RobotPosToRT(std::vector<double> pos, cv::Mat& R_gripper2base, cv::Mat& t_g
 		0, 0, 1
 		);
 	// Combined rotation matrix
-	R_gripper2base = R_x * R_y * R_z;
+	R_base2gripper = R_z * R_y * R_x;
 
-	t_gripper2base = (cv::Mat_<double>(3, 1) <<
-		-pos[0],
-		-pos[1],
-		-pos[2]
+	t_base2gripper = (cv::Mat_<double>(3, 1) <<
+		pos[0],
+		pos[1],
+		pos[2]
 		);
 }
 
@@ -64,7 +64,7 @@ cv::Mat RtVec2T(cv::Mat rvec, cv::Mat tvec)
 
 
 int EyeInHandCalibration(const std::vector<cv::Mat> images, const cv::Size& BOARD_SIZE, const uint32_t& SQUARE_SIZE, const std::vector<std::vector<double>> robotPosVec,
-	cv::Mat& R_cam2gripper, cv::Mat& t_cam2gripper)
+	cv::Mat& R_gripper2cam, cv::Mat& t_gripper2cam, cv::Mat& R_obj2base, cv::Mat& t_obj2base)
 {
 	cv::Mat cameraMatrix;
 	cv::Mat distCoeff;
@@ -93,7 +93,7 @@ int EyeInHandCalibration(const std::vector<cv::Mat> images, const cv::Size& BOAR
 	}
 
 	genChessBoardObjectPoints(BOARD_SIZE, SQUARE_SIZE, imagePoints, objPoints);
-	std::vector<cv::Mat> R_gripper2baseVec, t_gripper2baseVec, rvec_obj2camVec, t_obj2camVec;
+	std::vector<cv::Mat> R_base2gripperVec, t_base2gripperVec, rvec_obj2camVec, t_obj2camVec;
 	for (int i = 0; i < objPoints.size(); i++) {
 		/*for (int j = 0; j < objPoints[i].size(); j++)
 		{
@@ -110,33 +110,50 @@ int EyeInHandCalibration(const std::vector<cv::Mat> images, const cv::Size& BOAR
 		rvec_obj2camVec.push_back(rvec);
 		t_obj2camVec.push_back(tvec);
 
-		cv::Mat R_gripper2base, t_gripper2base;
-
-		RobotPosToRT(robotPosVec[i], R_gripper2base, t_gripper2base);
-		R_gripper2baseVec.push_back(R_gripper2base);
-		t_gripper2baseVec.push_back(t_gripper2base);
+		cv::Mat R_base2gripper, t_base2gripper;
+		RobotPosToRT(robotPosVec[i], R_base2gripper, t_base2gripper);
+		R_base2gripperVec.push_back(R_base2gripper);
+		t_base2gripperVec.push_back(t_base2gripper);
 	}
 
-	cv::calibrateHandEye(R_gripper2baseVec, t_gripper2baseVec, rvec_obj2camVec, t_obj2camVec, R_cam2gripper, t_cam2gripper);
+	cv::Mat R_base2obj, t_base2obj;
+	cv::calibrateRobotWorldHandEye(rvec_obj2camVec, t_obj2camVec, R_base2gripperVec, t_base2gripperVec, R_base2obj, t_base2obj, R_gripper2cam, t_gripper2cam, cv::CALIB_ROBOT_WORLD_HAND_EYE_SHAH);
 
-	std::cout << "R_cam2gripper:" << R_cam2gripper << std::endl;
-	std::cout << "t_cam2gripper:" << t_cam2gripper << std::endl;//相机坐标单位即像素尺寸为2.5微米
+	std::cout << "R_gripper2cam:" << R_gripper2cam << std::endl;
+	std::cout << "t_gripper2cam:" << t_gripper2cam << std::endl;
 
 	cv::Mat obj{ cv::Mat(3,1,CV_64F) };
-	cv::Mat R_obj2cam{};
-	cv::Mat estimateP_camera{ };
+
+	cv::transpose(R_base2obj, R_obj2base);
+	t_obj2base = -R_obj2base * t_base2obj;
+
+	std::cout << "R_obj2base:" << R_obj2base << std::endl;
+	std::cout << "t_obj2base:" << t_obj2base << std::endl;
+
+	cv::Mat estimateP_base{ }, estimateP_gripper{ }, estimateP_camera{ };
 	for (int i = 0; i < imagePoints.size(); i++)
 	{
-		for (int j = 0; j < imagePoints[i].size(); j += 15)
+		std::vector<cv::Point2f> reprojPoints{};
+		std::vector<cv::Point3f> estimateP_cameraVec{};
+		for (int j = 0; j < imagePoints[i].size(); j += 1)
 		{
 			obj.at<double>(0, 0) = objPoints[i][j].x;
 			obj.at<double>(1, 0) = objPoints[i][j].y;
 			obj.at<double>(2, 0) = objPoints[i][j].z;
-			cv::Rodrigues(rvec_obj2camVec[i], R_obj2cam);
-			estimateP_camera = R_obj2cam * obj + t_obj2camVec[i];
-			std::cout << "imagePoints[" << i << "][" << j << "]:" << imagePoints[i][j] << ", reprojection:" << (cameraMatrix * estimateP_camera) / estimateP_camera.at<double>(2, 0) << std::endl;
+			estimateP_base = R_obj2base * obj + t_obj2base;
+			estimateP_gripper = R_base2gripperVec[i] * estimateP_base + t_base2gripperVec[i];
+			estimateP_camera = R_gripper2cam * estimateP_gripper + t_gripper2cam;
+			estimateP_cameraVec.emplace_back(estimateP_camera);
 		}
+		cv::projectPoints(estimateP_cameraVec, cv::Mat::eye(3, 3, CV_64F), cv::Mat::zeros(3, 1, CV_64F), cameraMatrix, distCoeff, reprojPoints);
+		cv::Mat view{ images[i].clone() };
+		drawChessboardCorners(view, BOARD_SIZE, imagePoints[i], true);
+		drawChessboardCorners(view, BOARD_SIZE, reprojPoints, true);
+		cv::resize(view.clone(), view, cv::Size(640, 480));
+		cv::imshow("reprojection", view);
+		cv::waitKey();
 	}
+	cv::destroyAllWindows();
 	//cv::Mat R_obj2cam;
 	//cv::Rodrigues(rvecVec[0], R_obj2cam);
 
@@ -146,13 +163,13 @@ int EyeInHandCalibration(const std::vector<cv::Mat> images, const cv::Size& BOAR
 	//std::cout << "\n?==\n" << R_obj2cam * R_cam2gripper * R_gripper2baseVec[1] << std::endl;
 
 	return 0;
-	
+
 }
 
 int TestEyeInHandCalib(bool useRobot = false)
 {
 	const cv::Size BOARD_SIZE(9, 7);
-	const uint32_t SQUARE_SIZE{ 190 };
+	const uint32_t SQUARE_SIZE{ 20 };
 
 	std::vector<std::vector<double>> robotPosVec{};
 	std::vector<cv::Mat> images{};
@@ -181,22 +198,22 @@ int TestEyeInHandCalib(bool useRobot = false)
 	}
 	else
 	{
-		robotPosVec.emplace_back<std::vector<double>>({ 501.59, 205.26, 724.08, 159.99, -52.94, 40.79 });
-		//robotPosVec.emplace_back<std::vector<double>>({ 583.17, 54.59, 671.00, -171.09, -75.18, -19.67 });
-		robotPosVec.emplace_back<std::vector<double>>({ 719.01, 294.18, 798.64, 113.76, -63.60, 88.46 });
-		//robotPosVec.emplace_back<std::vector<double>>({ 742.58, 225.29, 807.35, 114.94,-78.37, 81.74 });
-		robotPosVec.emplace_back<std::vector<double>>({ 767.45, 120.58, 798.61, 103.99, -82.84, 84.64 });
-		std::vector<std::string> fileNames{ "C:\\Users\\zsh\\MVS\\Data\\501.59-205.26-724.08-159.99--52.94-40.79.jpg",
-			//"C:\\Users\\zsh\\MVS\\Data\\583.17-54.59-671.00--171.09--75.18--19.67.jpg",
-			"C:\\Users\\zsh\\MVS\\Data\\719.01-294.18-798.64-113.76--63.60-88.46.jpg",
-			//"C:\\Users\\zsh\\MVS\\Data\\742.58-225.29-807.35-114.94--78.37-81.74.jpg",
-			"C:\\Users\\zsh\\MVS\\Data\\767.45-120.58-798.61-103.99--82.84-84.64.jpg" };
+		robotPosVec.emplace_back<std::vector<double>>({ 629.11,-254.28,920.70,106.05,-82.14,52.11 });
+		robotPosVec.emplace_back<std::vector<double>>({ 664.75,-136.22,920.71,93.02,-72.07,74.15 });
+		robotPosVec.emplace_back<std::vector<double>>({ 676.66,49.76,921.16,101.06,-58.81,80.09 });
+		robotPosVec.emplace_back<std::vector<double>>({ 547.73,49.47,905.58,122.46,-54.92,62.04 });
+		robotPosVec.emplace_back<std::vector<double>>({ 806.85,-131.20,855.97,69.33,-74.51,101.29 });
+		std::vector<std::string> fileNames{ "D:\\Works\\semester_7\\毕设\\RobortSystem\\test\\calib_data\\2\\629.11,-254.28,920.70,106.05,-82.14,52.11.jpg",
+			"D:\\Works\\semester_7\\毕设\\RobortSystem\\test\\calib_data\\2\\664.75,-136.22,920.71,93.02,-72.07,74.15.jpg",
+			"D:\\Works\\semester_7\\毕设\\RobortSystem\\test\\calib_data\\2\\676.66,49.76,921.16,101.06,-58.81,80.09.jpg",
+			"D:\\Works\\semester_7\\毕设\\RobortSystem\\test\\calib_data\\2\\547.73,49.47,905.58,122.46,-54.92,62.04.jpg",
+			"D:\\Works\\semester_7\\毕设\\RobortSystem\\test\\calib_data\\2\\806.85,-131.20,855.97,69.33,-74.51,101.29.jpg" };
 		for (std::string file : fileNames)
 		{
 			images.push_back(cv::imread(file));
 		}
 
 	}
-	cv::Mat R_cam2gripper, t_cam2gripper;
-	return EyeInHandCalibration(images, BOARD_SIZE, SQUARE_SIZE, robotPosVec, R_cam2gripper, t_cam2gripper);
+	cv::Mat R_gripper2cam, t_gripper2cam, R_obj2base, t_obj2base;
+	return EyeInHandCalibration(images, BOARD_SIZE, SQUARE_SIZE, robotPosVec, R_gripper2cam, t_gripper2cam, R_obj2base, t_obj2base);
 }
