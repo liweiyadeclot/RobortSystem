@@ -14,7 +14,7 @@ void DistortImagePoint(const T1 cameraMatrix[9], const T1 distCoeff[5], const T2
 	//unaccomplished
 	float u{ src[0] }, v{ src[1] }, x{}, y{}, & dstU{ dst[0] }, & dstV{ dst[1] };
 	float r_sqr{ x * x + y * y };
-	dstU = (1 ) * x;
+	dstU = (1) * x;
 }
 
 template <typename T1, typename T2, typename T3>
@@ -108,7 +108,7 @@ public:
 		Matrix3x3Mul3x1(cameraMatrix, P_camera, P_pixel_esti);
 		for (int i = 0; i < 3; i++) P_pixel_esti[i] /= P_camera[2];
 		if (debug)std::cout << "t_custom2robot:" << cv::Mat(3, 1, CV_64F, (void*)t_custom2robot) << ",t_robot2end:" << cv::Mat(3, 1, CV_64F, (void*)t_robot2end) << ",t_end2camera:" << cv::Mat(3, 1, CV_64F, (void*)t_end2camera);
-		if(debug)std::cout << "P_custom:" << cv::Mat(3, 1, CV_64F, (void*)P_custom) << ", P_robot:" << cv::Mat(3, 1, CV_64F, (void*)P_robot) << ", P_end:" << cv::Mat(3, 1, CV_64F, (void*)P_end) << ", P_camera:" << cv::Mat(3,1,CV_64F,(void*)P_camera) << std::endl;
+		if (debug)std::cout << "P_custom:" << cv::Mat(3, 1, CV_64F, (void*)P_custom) << ", P_robot:" << cv::Mat(3, 1, CV_64F, (void*)P_robot) << ", P_end:" << cv::Mat(3, 1, CV_64F, (void*)P_end) << ", P_camera:" << cv::Mat(3, 1, CV_64F, (void*)P_camera) << std::endl;
 		return true;
 	}
 
@@ -152,7 +152,8 @@ private:
 	bool m_debug;
 };
 
-int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& BOARD_SIZE, const uint32_t& SQUARE_SIZE, const std::vector<std::vector<double>> robotPosVec)
+int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& BOARD_SIZE, const uint32_t& SQUARE_SIZE, const std::vector<std::vector<double>> robotPosVec,
+	cv::Mat& R_custom2robot, cv::Mat& t_custom2robot)
 {
 	cv::Mat cameraMatrix;
 	cv::Mat distCoeff;
@@ -193,13 +194,13 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 		R_base2gripperVec.push_back(R_base2gripper);
 		t_base2gripperVec.push_back(t_base2gripper);
 	}
-	double q_custom2robot[4] = { 1,0,0,0 };
-	double t_custom2robot[3] = { 0,0,0 };
-	//给出优化的初值
-	CVRotationMatrixToQuaternion(R_obj2base_init, q_custom2robot);
-	DeepCopy((double*)t_obj2base_init.data, t_custom2robot, 3);
+	double q_custom2robotArray[4] = { 1,0,0,0 };
+	double t_custom2robotArray[3] = { 0,0,0 };
 	cv::Mat obj{ cv::Mat(3,1,CV_64F) };
-	for (int i = 0; i < imagePoints.size(); i++)
+	//给出优化的初值
+	CVRotationMatrixToQuaternion(R_obj2base_init, q_custom2robotArray);
+	DeepCopy((double*)t_obj2base_init.data, t_custom2robotArray, 3);
+	/*for (int i = 0; i < imagePoints.size(); i++)
 	{
 		std::vector<cv::Point2f> reprojPoints{};
 		for (int j = 0; j < imagePoints[i].size(); j += 1)
@@ -235,11 +236,11 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 		cv::imshow("reprojection", view);
 		cv::waitKey();
 	}
-	cv::destroyAllWindows();
+	cv::destroyAllWindows();*/
 	// Build the problem.
 	ceres::Problem problem;
 
-	cv::Mat R_end2camera{R_gripper2cam};
+	cv::Mat R_end2camera{ R_gripper2cam };
 	cv::Mat t_end2camera{ t_gripper2cam };
 	// Set up the only cost function (also known as residual). This uses
 	// auto-differentiation to obtain the derivative (jacobian).
@@ -248,30 +249,31 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 		for (int j = 0; j < imagePoints[i].size(); j++)
 		{
 			cv::Mat R_robot2end{ R_base2gripperVec[i] };
-			cv::Mat t_robot2end{ t_base2gripperVec[i]};
+			cv::Mat t_robot2end{ t_base2gripperVec[i] };
 			problem.AddResidualBlock(
 				new ceres::AutoDiffCostFunction<ReprojectionCostFunctor, 1, 4, 3>(new ReprojectionCostFunctor(R_robot2end, t_robot2end, R_end2camera, t_end2camera, cameraMatrix, distCoeff, cv::Mat(objPoints[i][j]), cv::Mat(imagePoints[i][j]))),
-				//new ceres::CauchyLoss(1.0),
-				nullptr,
-				q_custom2robot, t_custom2robot);
+				new ceres::HuberLoss(1.0),
+				//nullptr,
+				q_custom2robotArray, t_custom2robotArray);
 		}
 	}
 
 
 	// Run the solver!
 	ceres::Solver::Options options;
-	options.minimizer_progress_to_stdout = true;
+	options.minimizer_progress_to_stdout = false;
 	options.linear_solver_type = ceres::DENSE_QR;
 	options.max_num_iterations = 1000;
 	ceres::Solver::Summary summary;
 	Solve(options, &problem, &summary);
 
-	double R_custom2robot[9] = { 1,0,0,0,1,0,0,0,1 };
-	ceres::QuaternionToRotation(q_custom2robot, R_custom2robot);
-	cv::Mat R_obj2base{ cv::Mat(3, 3, CV_64F, R_custom2robot) }, t_obj2base{ cv::Mat(3, 1, CV_64F, t_custom2robot) };
+	double R_custom2robotArray[9] = { 1,0,0,0,1,0,0,0,1 };
+	ceres::QuaternionToRotation(q_custom2robotArray, R_custom2robotArray);
+	R_custom2robot = cv::Mat(3, 3, CV_64F, R_custom2robotArray);
+	t_custom2robot = cv::Mat(3, 1, CV_64F, t_custom2robotArray);
 	std::cout << summary.BriefReport() << std::endl
-		<< "R_custom2robot:" << R_obj2base << std::endl
-		<< "t_custom2robot:" << t_obj2base << std::endl;
+		<< "R_custom2robot:" << R_custom2robot << std::endl
+		<< "t_custom2robot:" << t_custom2robot << std::endl;
 
 	for (int i = 0; i < imagePoints.size(); i++)
 	{
@@ -283,20 +285,19 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 			obj.at<double>(0, 0) = objPoints[i][j].x;
 			obj.at<double>(1, 0) = objPoints[i][j].y;
 			obj.at<double>(2, 0) = objPoints[i][j].z;
-			estimateP_base = R_obj2base * obj + t_obj2base;
+			estimateP_base = R_custom2robot * obj + t_custom2robot;
 			estimateP_gripper = R_base2gripperVec[i] * estimateP_base + t_base2gripperVec[i];
 			estimateP_camera = R_gripper2cam * estimateP_gripper + t_gripper2cam;
 			estimateP_cameraVec.emplace_back(estimateP_camera);
 		}
 		cv::projectPoints(estimateP_cameraVec, cv::Mat::eye(3, 3, CV_64F), cv::Mat::zeros(3, 1, CV_64F), cameraMatrix, distCoeff, reprojPoints);
 		cv::Mat view{ images[i].clone() };
-		drawChessboardCorners(view, BOARD_SIZE, imagePoints[i], true);
 		drawChessboardCorners(view, BOARD_SIZE, reprojPoints, true);
 		cv::resize(view.clone(), view, cv::Size(640, 480));
-		cv::imshow("reprojection", view);
-		cv::waitKey();
+		std::string windowName{ std::string("reprojection2-0") };
+		windowName[windowName.length() - 1] += i;
+		cv::imshow(windowName, view);
 	}
-	cv::destroyAllWindows();
 	return 0;
 }
 /*
@@ -462,17 +463,20 @@ int TestCustomSystemCalib(bool useRobot = false)
 		robotPosVec.emplace_back<std::vector<double>>({ 676.66,49.76,921.16,101.06,-58.81,80.09 });
 		robotPosVec.emplace_back<std::vector<double>>({ 547.73,49.47,905.58,122.46,-54.92,62.04 });
 		robotPosVec.emplace_back<std::vector<double>>({ 806.85,-131.20,855.97,69.33,-74.51,101.29 });
-		std::vector<std::string> fileNames{ "D:\\Works\\semester_7\\毕设\\RobortSystem\\test\\calib_data\\2\\629.11,-254.28,920.70,106.05,-82.14,52.11.jpg",
-			"D:\\Works\\semester_7\\毕设\\RobortSystem\\test\\calib_data\\2\\664.75,-136.22,920.71,93.02,-72.07,74.15.jpg",
-			"D:\\Works\\semester_7\\毕设\\RobortSystem\\test\\calib_data\\2\\676.66,49.76,921.16,101.06,-58.81,80.09.jpg",
-			"D:\\Works\\semester_7\\毕设\\RobortSystem\\test\\calib_data\\2\\547.73,49.47,905.58,122.46,-54.92,62.04.jpg",
-			"D:\\Works\\semester_7\\毕设\\RobortSystem\\test\\calib_data\\2\\806.85,-131.20,855.97,69.33,-74.51,101.29.jpg" };
+		std::vector<std::string> fileNames{ ".\\calib_data\\2\\629.11,-254.28,920.70,106.05,-82.14,52.11.jpg",
+			".\\calib_data\\2\\664.75,-136.22,920.71,93.02,-72.07,74.15.jpg",
+			".\\calib_data\\2\\676.66,49.76,921.16,101.06,-58.81,80.09.jpg",
+			".\\calib_data\\2\\547.73,49.47,905.58,122.46,-54.92,62.04.jpg",
+			".\\calib_data\\2\\806.85,-131.20,855.97,69.33,-74.51,101.29.jpg" };
 		for (std::string file : fileNames)
 		{
 			images.push_back(cv::imread(file));
 		}
 
 	}
-	cv::Mat R_cam2gripper, t_cam2gripper;
-	return CustomSystemCalibration(images, BOARD_SIZE, SQUARE_SIZE, robotPosVec);
+	cv::Mat R_custom2camera, t_custom2camera;
+	int ret = CustomSystemCalibration(images, BOARD_SIZE, SQUARE_SIZE, robotPosVec, R_custom2camera, t_custom2camera);
+	cv::waitKey();
+	cv::destroyAllWindows();
+	return ret;
 }
