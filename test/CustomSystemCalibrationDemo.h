@@ -190,7 +190,7 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 		t_obj2camVec.push_back(tvec);
 
 		cv::Mat R_base2gripper, t_base2gripper;
-		RobotPosToRT(robotPosVec[i], R_base2gripper, t_base2gripper);
+		PosToRT(robotPosVec[i], R_base2gripper, t_base2gripper);
 		R_base2gripperVec.push_back(R_base2gripper);
 		t_base2gripperVec.push_back(t_base2gripper);
 	}

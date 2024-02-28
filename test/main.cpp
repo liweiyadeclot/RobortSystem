@@ -1,7 +1,7 @@
-#include "CustomSystemCalibration.h"
+#include "CustomSystemMoveDemo.h"
 
 int main(int argc, char** argv)
 {
-	return TestCustomSystemCalib(false);
+	return TestCustomSystemMove(false);
 }
 

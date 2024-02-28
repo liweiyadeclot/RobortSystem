@@ -10,7 +10,7 @@
 #include "RobotMoveSubSystem.h"
 #include "CameraCalibrationDemo.h"
 
-void RobotPosToRT(const std::vector<double> pos, cv::Mat& R_base2gripper, cv::Mat& t_base2gripper)
+void PosToRT(const std::vector<double> pos, cv::Mat& R, cv::Mat& t)
 {
 	double rz{ pos[3] * CV_PI / 180 }, ry{ pos[4] * CV_PI / 180 }, rx{ pos[5] * CV_PI / 180 };
 	double sinRz{ sin(rz) }, cosRz{ cos(rz) }, sinRy{ sin(ry) }, cosRy{ cos(ry) }, sinRx{ sin(rx) }, cosRx{ cos(rx) };
@@ -34,9 +34,9 @@ void RobotPosToRT(const std::vector<double> pos, cv::Mat& R_base2gripper, cv::Ma
 		0, 0, 1
 		);
 	// Combined rotation matrix
-	R_base2gripper = R_z * R_y * R_x;
+	R = R_z * R_y * R_x;
 
-	t_base2gripper = (cv::Mat_<double>(3, 1) <<
+	t = (cv::Mat_<double>(3, 1) <<
 		pos[0],
 		pos[1],
 		pos[2]
@@ -101,7 +101,7 @@ int EyeInHandCalibration(const std::vector<cv::Mat> images, const cv::Size& BOAR
 		t_obj2camVec.push_back(tvec);
 
 		cv::Mat R_base2gripper, t_base2gripper;
-		RobotPosToRT(robotPosVec[i], R_base2gripper, t_base2gripper);
+		PosToRT(robotPosVec[i], R_base2gripper, t_base2gripper);
 		R_base2gripperVec.push_back(R_base2gripper);
 		t_base2gripperVec.push_back(t_base2gripper);
 	}

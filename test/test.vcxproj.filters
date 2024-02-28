@@ -116,7 +116,10 @@
     <ClInclude Include="EyeInHandCalibrationDemo.h">
       <Filter>头文件\Demo</Filter>
     </ClInclude>
-    <ClInclude Include="CustomSystemCalibration.h">
+    <ClInclude Include="CustomSystemCalibrationDemo.h">
+      <Filter>头文件\Demo</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomSystemMoveDemo.h">
       <Filter>头文件\Demo</Filter>
     </ClInclude>
   </ItemGroup>
