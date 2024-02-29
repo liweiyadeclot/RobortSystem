@@ -154,12 +154,12 @@ int TestEyeInHandCalib(bool useRobot = false)
 
 	if (useRobot)
 	{
-		robotPosVec.emplace_back<std::vector<double>>({ 756.21, -154.61, 815.67, 81.08, -69.36, 89.34 });
-		robotPosVec.emplace_back<std::vector<double>>({ 668.95, -384.08, 806.34, -125.44, -89.27, -83.59 });
-		robotPosVec.emplace_back<std::vector<double>>({ 770.24, -52.12, 818.95, 88.75, -59.50, 89.83 });
+		robotPosVec.emplace_back<std::vector<double>>({ 492.00, 16.15, 693.90, 46.32, 171.64, 8.66 });
+		robotPosVec.emplace_back<std::vector<double>>({ 475.72, -86.14, 709.64, 24.89, 160.99, -7.40 });
+		robotPosVec.emplace_back<std::vector<double>>({ 470.69, 92.61, 697.99, 60.61, -174.38, 17.21 });
+		
 		RobotMoveSubSystem robotMovement;
 		std::shared_ptr<Camera> cam = CameraManager::GetInstance()->GetOrOpenCamera();
-		robotMovement.MoveToPos(756.31, -155.40, 807.96, 73.65, -69.21, 96.99);
 		for (std::vector<double> pos : robotPosVec)
 		{
 			robotMovement.MoveToPos(pos[0], pos[1], pos[2], pos[3], pos[4], pos[5]);
@@ -172,20 +172,17 @@ int TestEyeInHandCalib(bool useRobot = false)
 			images.push_back(cam->GetFrame());
 		}
 		cv::destroyAllWindows();
-		robotMovement.MoveToPos(756.31, -155.40, 807.96, 73.65, -69.21, 96.99);
 	}
 	else
 	{
-		robotPosVec.emplace_back<std::vector<double>>({ 629.11,-254.28,920.70,106.05,-82.14,52.11 });
-		robotPosVec.emplace_back<std::vector<double>>({ 664.75,-136.22,920.71,93.02,-72.07,74.15 });
-		robotPosVec.emplace_back<std::vector<double>>({ 676.66,49.76,921.16,101.06,-58.81,80.09 });
-		robotPosVec.emplace_back<std::vector<double>>({ 547.73,49.47,905.58,122.46,-54.92,62.04 });
-		robotPosVec.emplace_back<std::vector<double>>({ 806.85,-131.20,855.97,69.33,-74.51,101.29 });
-		std::vector<std::string> fileNames{ ".\\calib_data\\2\\629.11,-254.28,920.70,106.05,-82.14,52.11.jpg",
-			".\\calib_data\\2\\664.75,-136.22,920.71,93.02,-72.07,74.15.jpg",
-			".\\calib_data\\2\\676.66,49.76,921.16,101.06,-58.81,80.09.jpg",
-			".\\calib_data\\2\\547.73,49.47,905.58,122.46,-54.92,62.04.jpg",
-			".\\calib_data\\2\\806.85,-131.20,855.97,69.33,-74.51,101.29.jpg" };
+		robotPosVec.emplace_back<std::vector<double>>({ 492.00, 16.15, 693.90, 46.32, 171.64, 8.66 });
+		robotPosVec.emplace_back<std::vector<double>>({ 475.72, -86.14, 709.64, 24.89, 160.99, -7.40 });
+		robotPosVec.emplace_back<std::vector<double>>({ 470.69, 92.61, 697.99, 60.61, -174.38, 17.21 });
+		std::vector<std::string> fileNames{
+			".\\calib_data\\3\\492.000000,16.150000,693.900000,46.320000,171.640000,8.660000,.jpg",
+			".\\calib_data\\3\\475.720000,-86.140000,709.640000,24.890000,160.990000,-7.400000,.jpg",
+			".\\calib_data\\3\\470.690000,92.610000,697.990000,60.610000,-174.380000,17.210000,.jpg"
+		};
 		for (std::string file : fileNames)
 		{
 			images.push_back(cv::imread(file));
