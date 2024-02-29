@@ -28,7 +28,7 @@ void genChessBoardObjectPoints(const cv::Size BOARD_SIZE, const uint32_t SQUARE_
 	std::vector<cv::Point3f> corners;
 	for (int i = 0; i < BOARD_SIZE.height; ++i) {
 		for (int j = 0; j < BOARD_SIZE.width; ++j) {
-			corners.emplace_back(j * SQUARE_SIZE, i * SQUARE_SIZE, 0);
+			corners.emplace_back(i * SQUARE_SIZE, j * SQUARE_SIZE, 0);
 		}
 	}
 	objPoints.resize(imagePoints.size(), corners);

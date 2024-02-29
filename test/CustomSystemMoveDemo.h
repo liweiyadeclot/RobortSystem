@@ -1,8 +1,9 @@
-#include "EyeInHandCalibrationDemo.h"
+#include "CustomSystemCalibrationDemo.h"
 
 void RTToPos(const cv::Mat R, const cv::Mat t, std::vector<double>& pos)
 {
-	if (pos.size() < 6) pos.resize(6, 0);
+	if (pos.size() < 6)
+		pos.resize(6, 0);
 	for (int i = 0; i < 3; i++)
 	{
 		pos[i] = t.at<double>(i, 0);
@@ -28,19 +29,30 @@ void RTToPos(const cv::Mat R, const cv::Mat t, std::vector<double>& pos)
 	pos[5] = rz * 180 / CV_PI;
 }
 
-void CustomSystemMove(const std::vector<double> cameraPos_custom, const cv::Mat R_robot2custom, const cv::Mat t_robot2custom, const cv::Mat R_camera2end, const cv::Mat t_camera2end,
+void CustomSystemMove(const std::vector<double> cameraPos_custom, const cv::Mat R_custom2robot, const cv::Mat t_custom2robot, const cv::Mat R_end2camera, const cv::Mat t_end2camera,
 	std::vector<double>& endPos_robot)
 {
 	cv::Mat R_custom2camera, t_custom2camera;
 	PosToRT(cameraPos_custom, R_custom2camera, t_custom2camera);
 
-	cv::Mat R_robot2camera, t_robot2camera;
-	R_robot2camera = R_custom2camera * R_robot2custom;
-	t_robot2camera = R_custom2camera * t_custom2camera + t_robot2custom;
+	cv::Mat R_robot2end;
+	cv::Mat R_robot2custom;
+	cv::transpose(R_custom2robot, R_robot2custom);
+	cv::Mat R_camera2end;
+	cv::transpose(R_end2camera, R_camera2end);
+	R_robot2end = R_camera2end * R_custom2camera * R_robot2custom;
 
-	cv::Mat R_robot2end, t_robot2end;
-	R_robot2end = R_camera2end * R_robot2camera;
-	t_robot2end = R_camera2end * t_robot2camera + t_camera2end;
+
+	cv::Mat t_robot2end;
+	cv::Mat t_camera2end;
+	t_camera2end = -R_camera2end * t_end2camera;
+	cv::Mat t_robot2camera;
+	cv::Mat t_robot2custom;
+	t_robot2custom = -R_robot2custom * t_custom2robot;
+	t_robot2camera = R_robot2custom * t_custom2camera + t_robot2custom;
+	cv::Mat R_robot2camera;
+	R_robot2camera = R_custom2camera * R_robot2custom;
+	t_robot2end = R_robot2camera * t_camera2end + t_robot2camera;
 
 	RTToPos(R_robot2end, t_robot2end, endPos_robot);
 	std::cout << "robotPos:"
@@ -105,52 +117,20 @@ int TestCustomSystemMove(bool useRobot = false)
 
 	}
 	cv::Mat R_gripper2cam, t_gripper2cam, R_obj2base, t_obj2base;
-	int ret = EyeInHandCalibration(images, BOARD_SIZE, SQUARE_SIZE, robotPosVec, R_gripper2cam, t_gripper2cam, R_obj2base, t_obj2base);
-	cv::Mat R_robot2custom, t_robot2custom;
-	cv::transpose(R_obj2base, R_robot2custom);
-	t_robot2custom = -R_robot2custom * t_obj2base;
-	cv::Mat R_camera2end, t_camera2end;
-	cv::transpose(R_gripper2cam, R_camera2end);
-	t_camera2end = -R_camera2end * t_gripper2cam;
+	int ret = CustomSystemCalibration(images, BOARD_SIZE, SQUARE_SIZE, robotPosVec, R_gripper2cam, t_gripper2cam, R_obj2base, t_obj2base);
 	std::vector<double> robotPos;
-	CustomSystemMove({ 0,0,500,180,0,0 }, R_robot2custom, t_robot2custom, R_camera2end, t_camera2end, robotPos);
-	if (useRobot)
+	for (double z = 200; z <= 500; z += 100)
 	{
-		RobotMoveSubSystem robotMovement;
-		robotMovement.MoveToPos(robotPos[0], robotPos[1], robotPos[2], robotPos[3], robotPos[4], robotPos[5]);
-		cv::Mat view;
-		cv::resize(CameraManager::GetInstance()->GetOrOpenCamera()->GetFrame(), view, cv::Size(640, 480));
-		cv::imshow("Camera", view);
-		cv::waitKey();
-	}
-	CustomSystemMove({ 0,20,500,180,0,0 }, R_robot2custom, t_robot2custom, R_camera2end, t_camera2end, robotPos);
-	if (useRobot)
-	{
-		RobotMoveSubSystem robotMovement;
-		robotMovement.MoveToPos(robotPos[0], robotPos[1], robotPos[2], robotPos[3], robotPos[4], robotPos[5]);
-		cv::Mat view;
-		cv::resize(CameraManager::GetInstance()->GetOrOpenCamera()->GetFrame(), view, cv::Size(640, 480));
-		cv::imshow("Camera", view);
-		cv::waitKey();
-	}
-	CustomSystemMove({ 0,40,500,180,0,0 }, R_robot2custom, t_robot2custom, R_camera2end, t_camera2end, robotPos);
-	if (useRobot)
-	{
-		RobotMoveSubSystem robotMovement;
-		robotMovement.MoveToPos(robotPos[0], robotPos[1], robotPos[2], robotPos[3], robotPos[4], robotPos[5]);
-		cv::Mat view;
-		cv::resize(CameraManager::GetInstance()->GetOrOpenCamera()->GetFrame(), view, cv::Size(640, 480));
-		cv::imshow("Camera", view);
-		cv::waitKey();
-	}
-	CustomSystemMove({ 0,60,500,180,0,0 }, R_robot2custom, t_robot2custom, R_camera2end, t_camera2end, robotPos);
-	if (useRobot)
-	{
-		RobotMoveSubSystem robotMovement;
-		robotMovement.MoveToPos(robotPos[0], robotPos[1], robotPos[2], robotPos[3], robotPos[4], robotPos[5]);
-		cv::Mat view;
-		cv::resize(CameraManager::GetInstance()->GetOrOpenCamera()->GetFrame(), view, cv::Size(640, 480));
-		cv::imshow("Camera", view);
+		CustomSystemMove({ 0,0,z,180,0,0 }, R_obj2base, t_obj2base, R_gripper2cam, t_gripper2cam, robotPos);
+		if (useRobot)
+		{
+			RobotMoveSubSystem robotMovement;
+			robotMovement.MoveToPos(robotPos[0], robotPos[1], robotPos[2], robotPos[3], robotPos[4], robotPos[5]);
+			cv::Mat view;
+			cv::resize(CameraManager::GetInstance()->GetOrOpenCamera()->GetFrame(), view, cv::Size(640, 480));
+			cv::imshow("Camera", view);
+			cv::waitKey();
+		}
 	}
 	cv::waitKey();
 	cv::destroyAllWindows();

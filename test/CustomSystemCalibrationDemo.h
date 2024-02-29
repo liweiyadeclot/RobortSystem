@@ -153,15 +153,13 @@ private:
 };
 
 int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& BOARD_SIZE, const uint32_t& SQUARE_SIZE, const std::vector<std::vector<double>> robotPosVec,
-	cv::Mat& R_custom2robot, cv::Mat& t_custom2robot)
+	cv::Mat& R_camera2end, cv::Mat& t_camera2end, cv::Mat& R_custom2robot, cv::Mat& t_custom2robot)
 {
 	cv::Mat cameraMatrix;
 	cv::Mat distCoeff;
 	CameraCalibrationDemoMain(images, BOARD_SIZE.width, BOARD_SIZE.height, SQUARE_SIZE, cameraMatrix, distCoeff);
 
-	cv::Mat R_gripper2cam, t_gripper2cam, R_obj2base_init, t_obj2base_init;
-
-	EyeInHandCalibration(images, BOARD_SIZE, SQUARE_SIZE, robotPosVec, R_gripper2cam, t_gripper2cam, R_obj2base_init, t_obj2base_init);
+	EyeInHandCalibration(images, BOARD_SIZE, SQUARE_SIZE, robotPosVec, R_camera2end, t_camera2end);
 
 	std::vector<std::vector<cv::Point3f>> objPoints{};
 	std::vector< std::vector<cv::Point2f>> imagePoints{};
@@ -197,51 +195,12 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 	double q_custom2robotArray[4] = { 1,0,0,0 };
 	double t_custom2robotArray[3] = { 0,0,0 };
 	cv::Mat obj{ cv::Mat(3,1,CV_64F) };
-	//给出优化的初值
-	CVRotationMatrixToQuaternion(R_obj2base_init, q_custom2robotArray);
-	DeepCopy((double*)t_obj2base_init.data, t_custom2robotArray, 3);
-	/*for (int i = 0; i < imagePoints.size(); i++)
-	{
-		std::vector<cv::Point2f> reprojPoints{};
-		for (int j = 0; j < imagePoints[i].size(); j += 1)
-		{
-			cv::Mat projPoint{ cv::Mat(3,1,CV_64F) };
-			cv::Point2f imagePoint{};
-			obj.at<double>(0, 0) = objPoints[i][j].x;
-			obj.at<double>(1, 0) = objPoints[i][j].y;
-			obj.at<double>(2, 0) = objPoints[i][j].z;
-
-			double q_robot2end[4], q_end2camera[4];
-			CVRotationMatrixToQuaternion(R_base2gripperVec[i], q_robot2end);
-
-			double test[9];
-			ceres::QuaternionToRotation(q_robot2end, test);
-			std::cout << "********************Assert:" << cv::Mat(3, 3, CV_64F, test) << "==" << R_base2gripperVec[i] << std::endl;
-
-			CVRotationMatrixToQuaternion(R_gripper2cam, q_end2camera);
-			bool debug{i == 0 && j == 0};
-			ReprojectionCostFunctor::projection((double*)obj.data,
-				q_custom2robot, t_custom2robot,
-				q_robot2end, (double*)t_base2gripperVec[i].data,
-				q_end2camera, (double*)t_gripper2cam.data,
-				(double*)cameraMatrix.data, (double*)projPoint.data, debug);
-			imagePoint.x = projPoint.at<double>(0, 0);
-			imagePoint.y = projPoint.at<double>(1, 0);
-			reprojPoints.emplace_back(imagePoint);
-		}
-		cv::Mat view{ cv::Mat::zeros(6400, 4800, CV_8U)};
-		drawChessboardCorners(view, BOARD_SIZE, imagePoints[i], true);
-		drawChessboardCorners(view, BOARD_SIZE, reprojPoints, true);
-		cv::resize(view.clone(), view, cv::Size(640, 480));
-		cv::imshow("reprojection", view);
-		cv::waitKey();
-	}
-	cv::destroyAllWindows();*/
 	// Build the problem.
 	ceres::Problem problem;
 
-	cv::Mat R_end2camera{ R_gripper2cam };
-	cv::Mat t_end2camera{ t_gripper2cam };
+	cv::Mat R_end2camera;
+	cv::transpose(R_camera2end, R_end2camera);
+	cv::Mat t_end2camera{ -R_end2camera * t_camera2end };
 	// Set up the only cost function (also known as residual). This uses
 	// auto-differentiation to obtain the derivative (jacobian).
 	for (int i = 0; i < imagePoints.size(); i++)
@@ -287,14 +246,14 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 			obj.at<double>(2, 0) = objPoints[i][j].z;
 			estimateP_base = R_custom2robot * obj + t_custom2robot;
 			estimateP_gripper = R_base2gripperVec[i] * estimateP_base + t_base2gripperVec[i];
-			estimateP_camera = R_gripper2cam * estimateP_gripper + t_gripper2cam;
+			estimateP_camera = R_end2camera * estimateP_gripper + t_end2camera;
 			estimateP_cameraVec.emplace_back(estimateP_camera);
 		}
 		cv::projectPoints(estimateP_cameraVec, cv::Mat::eye(3, 3, CV_64F), cv::Mat::zeros(3, 1, CV_64F), cameraMatrix, distCoeff, reprojPoints);
 		cv::Mat view{ images[i].clone() };
 		drawChessboardCorners(view, BOARD_SIZE, reprojPoints, true);
 		cv::resize(view.clone(), view, cv::Size(640, 480));
-		std::string windowName{ std::string("reprojection2-0") };
+		std::string windowName{ std::string("reprojection0") };
 		windowName[windowName.length() - 1] += i;
 		cv::imshow(windowName, view);
 	}
@@ -439,7 +398,7 @@ int TestCustomSystemCalib(bool useRobot = false)
 		robotPosVec.emplace_back<std::vector<double>>({ 492.00, 16.15, 693.90, 46.32, 171.64, 8.66 });
 		robotPosVec.emplace_back<std::vector<double>>({ 475.72, -86.14, 709.64, 24.89, 160.99, -7.40 });
 		robotPosVec.emplace_back<std::vector<double>>({ 470.69, 92.61, 697.99, 60.61, -174.38, 17.21 });
-		
+
 		RobotMoveSubSystem robotMovement;
 		std::shared_ptr<Camera> cam = CameraManager::GetInstance()->GetOrOpenCamera();
 		for (std::vector<double> pos : robotPosVec)
@@ -471,8 +430,8 @@ int TestCustomSystemCalib(bool useRobot = false)
 		}
 
 	}
-	cv::Mat R_custom2camera, t_custom2camera;
-	int ret = CustomSystemCalibration(images, BOARD_SIZE, SQUARE_SIZE, robotPosVec, R_custom2camera, t_custom2camera);
+	cv::Mat R_camera2end, t_camera2end, R_custom2camera, t_custom2camera;
+	int ret = CustomSystemCalibration(images, BOARD_SIZE, SQUARE_SIZE, robotPosVec, R_camera2end, t_camera2end, R_custom2camera, t_custom2camera);
 	cv::waitKey();
 	cv::destroyAllWindows();
 	return ret;
