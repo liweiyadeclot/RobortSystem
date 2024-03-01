@@ -192,8 +192,11 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 		R_base2gripperVec.push_back(R_base2gripper);
 		t_base2gripperVec.push_back(t_base2gripper);
 	}
-	double q_custom2robotArray[4] = { 1,0,0,0 };
-	double t_custom2robotArray[3] = { 0,0,0 };
+	double* q_custom2robotArray = (double*)malloc(4 * sizeof(double));
+	double* t_custom2robotArray = (double*)malloc(3 * sizeof(double));
+	memset(q_custom2robotArray, 0, 4 * sizeof(double));
+	q_custom2robotArray[0] = 1;
+	memset(t_custom2robotArray, 0, 3 * sizeof(double));
 	cv::Mat obj{ cv::Mat(3,1,CV_64F) };
 	// Build the problem.
 	ceres::Problem problem;
@@ -226,7 +229,7 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 	ceres::Solver::Summary summary;
 	Solve(options, &problem, &summary);
 
-	double R_custom2robotArray[9] = { 1,0,0,0,1,0,0,0,1 };
+	double* R_custom2robotArray = (double*)malloc(9 * sizeof(double));
 	ceres::QuaternionToRotation(q_custom2robotArray, R_custom2robotArray);
 	R_custom2robot = cv::Mat(3, 3, CV_64F, R_custom2robotArray);
 	t_custom2robot = cv::Mat(3, 1, CV_64F, t_custom2robotArray);
@@ -250,7 +253,8 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 			estimateP_cameraVec.emplace_back(estimateP_camera);
 		}
 		cv::projectPoints(estimateP_cameraVec, cv::Mat::eye(3, 3, CV_64F), cv::Mat::zeros(3, 1, CV_64F), cameraMatrix, distCoeff, reprojPoints);
-		cv::Mat view{ images[i].clone() };
+		cv::Mat view;
+		cv::undistort(images[i].clone(), view, cameraMatrix, distCoeff);
 		drawChessboardCorners(view, BOARD_SIZE, reprojPoints, true);
 		cv::resize(view.clone(), view, cv::Size(640, 480));
 		std::string windowName{ std::string("reprojection0") };

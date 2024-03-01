@@ -77,6 +77,8 @@ int TestCustomSystemMove(bool useRobot = false)
 		robotPosVec.emplace_back<std::vector<double>>({ 492.00, 16.15, 693.90, 46.32, 171.64, 8.66 });
 		robotPosVec.emplace_back<std::vector<double>>({ 475.72, -86.14, 709.64, 24.89, 160.99, -7.40 });
 		robotPosVec.emplace_back<std::vector<double>>({ 470.69, 92.61, 697.99, 60.61, -174.38, 17.21 });
+		robotPosVec.emplace_back<std::vector<double>>({ 473.37, 195.01, 585.63, 80.25, -155.65, 22.65 });
+		robotPosVec.emplace_back<std::vector<double>>({ 326.58, 34.31, 556.53, 57.80, 158.15, 30.94 });
 		RobotMoveSubSystem robotMovement;
 		std::shared_ptr<Camera> cam = CameraManager::GetInstance()->GetOrOpenCamera();
 		for (std::vector<double> pos : robotPosVec)
@@ -88,7 +90,7 @@ int TestCustomSystemMove(bool useRobot = false)
 				cv::resize(cam->GetFrame(), view, cv::Size(640, 480));
 				cv::imshow("Camera", view);
 			}
-			std::string imageFileName{ "" };
+			std::string imageFileName{ ".\\calib_data\\" };
 			for (double value : pos)
 			{
 				imageFileName.append(std::to_string(value));
@@ -105,10 +107,14 @@ int TestCustomSystemMove(bool useRobot = false)
 		robotPosVec.emplace_back<std::vector<double>>({ 492.00, 16.15, 693.90, 46.32, 171.64, 8.66 });
 		robotPosVec.emplace_back<std::vector<double>>({ 475.72, -86.14, 709.64, 24.89, 160.99, -7.40 });
 		robotPosVec.emplace_back<std::vector<double>>({ 470.69, 92.61, 697.99, 60.61, -174.38, 17.21 });
+		robotPosVec.emplace_back<std::vector<double>>({ 473.37, 195.01, 585.63, 80.25, -155.65, 22.65 });
+		robotPosVec.emplace_back<std::vector<double>>({ 326.58, 34.31, 556.53, 57.80, 158.15, 30.94 });
 		std::vector<std::string> fileNames{
-			".\\calib_data\\3\\492.000000,16.150000,693.900000,46.320000,171.640000,8.660000,.jpg",
-			".\\calib_data\\3\\475.720000,-86.140000,709.640000,24.890000,160.990000,-7.400000,.jpg",
-			".\\calib_data\\3\\470.690000,92.610000,697.990000,60.610000,-174.380000,17.210000,.jpg"
+			".\\calib_data\\492.000000,16.150000,693.900000,46.320000,171.640000,8.660000,.jpg",
+			".\\calib_data\\475.720000,-86.140000,709.640000,24.890000,160.990000,-7.400000,.jpg",
+			".\\calib_data\\470.690000,92.610000,697.990000,60.610000,-174.380000,17.210000,.jpg",
+			".\\calib_data\\473.370000,195.010000,585.630000,80.250000,-155.650000,22.650000,.jpg",
+			".\\calib_data\\326.580000,34.310000,556.530000,57.800000,158.150000,30.940000,.jpg"
 		};
 		for (std::string file : fileNames)
 		{
@@ -121,7 +127,7 @@ int TestCustomSystemMove(bool useRobot = false)
 	std::vector<double> robotPos;
 	for (double z = 200; z <= 500; z += 100)
 	{
-		CustomSystemMove({ 0,0,z,180,0,0 }, R_obj2base, t_obj2base, R_gripper2cam, t_gripper2cam, robotPos);
+		CustomSystemMove(std::vector<double>({ 0,0,z,180,0,0 }), R_obj2base, t_obj2base, R_gripper2cam, t_gripper2cam, robotPos);
 		if (useRobot)
 		{
 			RobotMoveSubSystem robotMovement;

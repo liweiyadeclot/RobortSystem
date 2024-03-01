@@ -109,7 +109,8 @@ int EyeInHandCalibration(const std::vector<cv::Mat> images, const cv::Size& BOAR
 		t_gripper2baseVec.push_back(t_gripper2base);
 	}
 
-	cv::calibrateHandEye(R_gripper2baseVec, t_gripper2baseVec, rvec_obj2camVec, t_obj2camVec, R_cam2gripper, t_cam2gripper);
+	cv::calibrateHandEye(R_gripper2baseVec, t_gripper2baseVec, rvec_obj2camVec, t_obj2camVec, R_cam2gripper, t_cam2gripper);// , cv::CALIB_HAND_EYE_PARK);
+
 
 	std::cout << "R_cam2gripper:" << R_cam2gripper << std::endl;
 	std::cout << "t_cam2gripper:" << t_cam2gripper << std::endl;
