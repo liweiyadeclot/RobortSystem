@@ -142,6 +142,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CalibrateAllDemo.h" />
     <ClInclude Include="CustomSystemMoveDemo.h" />
     <ClCompile Include="HIKCamera.cpp" />
     <ClCompile Include="CameraManager.cpp" />

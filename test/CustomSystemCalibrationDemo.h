@@ -7,42 +7,15 @@
 #include "ceres/rotation.h"
 #include "EyeInHandCalibrationDemo.h"
 
-template <typename T1, typename T2, typename T3>
-void DistortImagePoint(const T1 cameraMatrix[9], const T1 distCoeff[5], const T2 src[2], T3 dst[2])
-{
-	float k1{ distCoeff[0] }, k2{ distCoeff[1] }, p1{ distCoeff[2] }, p2{ distCoeff[3] }, k3{ distCoeff[4] };
-	//unaccomplished
-	float u{ src[0] }, v{ src[1] }, x{}, y{}, & dstU{ dst[0] }, & dstV{ dst[1] };
-	float r_sqr{ x * x + y * y };
-	dstU = (1) * x;
-}
-
-template <typename T1, typename T2, typename T3>
-void Matrix3x3Mul3x1(const T1 m3x3[9], const T2 m3x1[3], T3 result[3])
-{
-	for (int i = 0; i < 3; i++)
-	{
-		result[i] = T3(m3x3[3 * i]) * T3(m3x1[0]) + T3(m3x3[3 * i + 1]) * T3(m3x1[1]) + T3(m3x3[3 * i + 2]) * T3(m3x1[2]);
-	}
-}
-
-template <typename T1, typename T2>
-void ArrayTypeConvert(const T1* inArray, T2* outArray, int ArrayLen)
-{
-	for (int i = 0; i < ArrayLen; i++)
-	{
-		outArray[i] = T2(inArray[i]);
-	}
-}
-
-template <typename T>
-void DeepCopy(const T* src, T* dst, int copyLen)
-{
-	for (int i = 0; i < copyLen; i++)
-	{
-		dst[i] = src[i];
-	}
-}
+//template <typename T1, typename T2, typename T3>
+//void DistortImagePoint(const T1 cameraMatrix[9], const T1 distCoeff[5], const T2 src[2], T3 dst[2])
+//{
+//	float k1{ distCoeff[0] }, k2{ distCoeff[1] }, p1{ distCoeff[2] }, p2{ distCoeff[3] }, k3{ distCoeff[4] };
+//	//unaccomplished
+//	float u{ src[0] }, v{ src[1] }, x{}, y{}, & dstU{ dst[0] }, & dstV{ dst[1] };
+//	float r_sqr{ x * x + y * y };
+//	dstU = (1) * x;
+//}
 
 void CVRotationMatrixToQuaternion(const cv::Mat R, double q[4])
 {
@@ -113,7 +86,7 @@ public:
 	}
 
 	template <typename T>
-	bool operator()(const T const q_custom2robot[4], const T const t_custom2robot[3], T residual[1]) const
+	bool operator()(const T const q_end2camera[4], const T const t_end2camera[3], const T const q_custom2robot[4], const T const t_custom2robot[3], T residual[1]) const
 	{
 		T P_custom[3]{};
 		ArrayTypeConvert(m_P_custom, P_custom, 3);
@@ -121,10 +94,10 @@ public:
 		ArrayTypeConvert(m_q_robot2end, q_robot2end, 4);
 		T t_robot2end[3]{};
 		ArrayTypeConvert(m_t_robot2end, t_robot2end, 3);
-		T q_end2camera[4]{};
+		/*T q_end2camera[4]{};
 		ArrayTypeConvert(m_q_end2camera, q_end2camera, 4);
 		T t_end2camera[3]{};
-		ArrayTypeConvert(m_t_end2camera, t_end2camera, 3);
+		ArrayTypeConvert(m_t_end2camera, t_end2camera, 3);*/
 		T cameraMatrix[9]{};
 		ArrayTypeConvert(m_cameraMatrix, cameraMatrix, 9);
 
@@ -187,8 +160,11 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 		rvec_obj2camVec.push_back(rvec);
 		t_obj2camVec.push_back(tvec);
 
+		cv::Mat R_gripper2base, t_gripper2base;
+		PosToRT(robotPosVec[i], R_gripper2base, t_gripper2base);
 		cv::Mat R_base2gripper, t_base2gripper;
-		PosToRT(robotPosVec[i], R_base2gripper, t_base2gripper);
+		cv::transpose(R_gripper2base, R_base2gripper);
+		t_base2gripper = -R_base2gripper * t_gripper2base;
 		R_base2gripperVec.push_back(R_base2gripper);
 		t_base2gripperVec.push_back(t_base2gripper);
 	}
@@ -197,6 +173,8 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 	memset(q_custom2robotArray, 0, 4 * sizeof(double));
 	q_custom2robotArray[0] = 1;
 	memset(t_custom2robotArray, 0, 3 * sizeof(double));
+
+
 	cv::Mat obj{ cv::Mat(3,1,CV_64F) };
 	// Build the problem.
 	ceres::Problem problem;
@@ -204,6 +182,10 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 	cv::Mat R_end2camera;
 	cv::transpose(R_camera2end, R_end2camera);
 	cv::Mat t_end2camera{ -R_end2camera * t_camera2end };
+	double* q_end2cameraArray = (double*)malloc(4 * sizeof(double));
+	double* t_end2cameraArray = (double*)t_end2camera.data;
+	CVRotationMatrixToQuaternion(R_end2camera, q_end2cameraArray);
+
 	// Set up the only cost function (also known as residual). This uses
 	// auto-differentiation to obtain the derivative (jacobian).
 	for (int i = 0; i < imagePoints.size(); i++)
@@ -213,10 +195,10 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 			cv::Mat R_robot2end{ R_base2gripperVec[i] };
 			cv::Mat t_robot2end{ t_base2gripperVec[i] };
 			problem.AddResidualBlock(
-				new ceres::AutoDiffCostFunction<ReprojectionCostFunctor, 1, 4, 3>(new ReprojectionCostFunctor(R_robot2end, t_robot2end, R_end2camera, t_end2camera, cameraMatrix, distCoeff, cv::Mat(objPoints[i][j]), cv::Mat(imagePoints[i][j]))),
+				new ceres::AutoDiffCostFunction<ReprojectionCostFunctor, 1, 4, 3, 4, 3>(new ReprojectionCostFunctor(R_robot2end, t_robot2end, R_end2camera, t_end2camera, cameraMatrix, distCoeff, cv::Mat(objPoints[i][j]), cv::Mat(imagePoints[i][j]))),
 				new ceres::HuberLoss(1.0),
 				//nullptr,
-				q_custom2robotArray, t_custom2robotArray);
+				q_end2cameraArray, t_end2cameraArray, q_custom2robotArray, t_custom2robotArray);
 		}
 	}
 
@@ -227,13 +209,18 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 	options.linear_solver_type = ceres::DENSE_QR;
 	options.max_num_iterations = 1000;
 	ceres::Solver::Summary summary;
-	Solve(options, &problem, &summary);
+	ceres::Solve(options, &problem, &summary);
 
 	double* R_custom2robotArray = (double*)malloc(9 * sizeof(double));
 	ceres::QuaternionToRotation(q_custom2robotArray, R_custom2robotArray);
 	R_custom2robot = cv::Mat(3, 3, CV_64F, R_custom2robotArray);
 	t_custom2robot = cv::Mat(3, 1, CV_64F, t_custom2robotArray);
+	ceres::QuaternionToRotation(q_end2cameraArray, (double*)R_end2camera.data);
+	cv::transpose(R_end2camera, R_camera2end);
+	t_camera2end = -R_camera2end * t_end2camera;
 	std::cout << summary.BriefReport() << std::endl
+		<< "R_camera2end:" << R_camera2end << std::endl
+		<< "t_camera2end:" << t_camera2end << std::endl
 		<< "R_custom2robot:" << R_custom2robot << std::endl
 		<< "t_custom2robot:" << t_custom2robot << std::endl;
 
@@ -251,8 +238,10 @@ int CustomSystemCalibration(const std::vector<cv::Mat> images, const cv::Size& B
 			estimateP_gripper = R_base2gripperVec[i] * estimateP_base + t_base2gripperVec[i];
 			estimateP_camera = R_end2camera * estimateP_gripper + t_end2camera;
 			estimateP_cameraVec.emplace_back(estimateP_camera);
+			cv::Mat estimateHomoP_image = cameraMatrix * estimateP_camera / estimateP_camera.at<double>(2, 0);
+			reprojPoints.emplace_back(estimateHomoP_image.at<double>(0,0), estimateHomoP_image.at<double>(1,0));
 		}
-		cv::projectPoints(estimateP_cameraVec, cv::Mat::eye(3, 3, CV_64F), cv::Mat::zeros(3, 1, CV_64F), cameraMatrix, distCoeff, reprojPoints);
+		//cv::projectPoints(estimateP_cameraVec, cv::Mat::eye(3, 3, CV_64F), cv::Mat::zeros(3, 1, CV_64F), cameraMatrix, distCoeff, reprojPoints);
 		cv::Mat view;
 		cv::undistort(images[i].clone(), view, cameraMatrix, distCoeff);
 		drawChessboardCorners(view, BOARD_SIZE, reprojPoints, true);
@@ -391,17 +380,20 @@ int CustomSystemCalibration1(const std::vector<cv::Mat> images, const cv::Size& 
 */
 int TestCustomSystemCalib(bool useRobot = false)
 {
-	const cv::Size BOARD_SIZE(9, 7);
-	const uint32_t SQUARE_SIZE{ 20 };
+	const cv::Size BOARD_SIZE(9, 6);
+	const uint32_t SQUARE_SIZE{ 30 };
 
 	std::vector<std::vector<double>> robotPosVec{};
 	std::vector<cv::Mat> images{};
 
 	if (useRobot)
 	{
-		robotPosVec.emplace_back<std::vector<double>>({ 492.00, 16.15, 693.90, 46.32, 171.64, 8.66 });
-		robotPosVec.emplace_back<std::vector<double>>({ 475.72, -86.14, 709.64, 24.89, 160.99, -7.40 });
-		robotPosVec.emplace_back<std::vector<double>>({ 470.69, 92.61, 697.99, 60.61, -174.38, 17.21 });
+		robotPosVec.emplace_back<std::vector<double>>({ -49.38, 671.00, 759.28, 143.24, -177.42, 4.39 });
+		robotPosVec.emplace_back<std::vector<double>>({ 146.64, 686.72, 710.61, 124.32, 169.89, -12.94 });
+		robotPosVec.emplace_back<std::vector<double>>({ -267.57, 553.50, 833.55, 159.16, -160.31, 20.04 });
+		robotPosVec.emplace_back<std::vector<double>>({ -202.13, 448.99, 673.82, 174.91, -158.68, 26.84 });
+		robotPosVec.emplace_back<std::vector<double>>({ -142.80, 777.44, 683.01, 144.36, -158.90, 0.30 });
+		robotPosVec.emplace_back<std::vector<double>>({ 143.59, 755.23, 731.64, 132.50, 175.13, -17.26 });
 
 		RobotMoveSubSystem robotMovement;
 		std::shared_ptr<Camera> cam = CameraManager::GetInstance()->GetOrOpenCamera();

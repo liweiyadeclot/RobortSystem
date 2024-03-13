@@ -122,5 +122,8 @@
     <ClInclude Include="CustomSystemMoveDemo.h">
       <Filter>头文件\Demo</Filter>
     </ClInclude>
+    <ClInclude Include="CalibrateAllDemo.h">
+      <Filter>头文件\Demo</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
