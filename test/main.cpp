@@ -1,7 +1,9 @@
 #include "CalibrateAllDemo.h"
+#include "CalibDataCollector.h"
 
 int main(int argc, char** argv)
 {
-	return TestCalibrateAllDemo(false);
+	TestCalibrateAllDemo(false);
+	return 0;
 }
 

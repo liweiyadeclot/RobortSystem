@@ -129,35 +129,36 @@ cv::Mat rot2quatMinimal(const cv::Mat& R)
 	double m20 = R.at<double>(2, 0), m21 = R.at<double>(2, 1), m22 = R.at<double>(2, 2);
 	double trace = m00 + m11 + m22;
 
-	//if (trace > 0) {
-	//	double S = sqrt(trace + 1.0) * 2; // S=4*qw
-	//	qx = (m21 - m12) / S;
-	//	qy = (m02 - m20) / S;
-	//	qz = (m10 - m01) / S;
-	//}
-	//else if (m00 > m11 && m00 > m22) {
-	//	double S = sqrt(1.0 + m00 - m11 - m22) * 2; // S=4*qx
-	//	qx = 0.25 * S;
-	//	qy = (m01 + m10) / S;
-	//	qz = (m02 + m20) / S;
-	//}
-	//else if (m11 > m22) {
-	//	double S = sqrt(1.0 + m11 - m00 - m22) * 2; // S=4*qy
-	//	qx = (m01 + m10) / S;
-	//	qy = 0.25 * S;
-	//	qz = (m12 + m21) / S;
-	//}
-	//else {
-	//	double S = sqrt(1.0 + m22 - m00 - m11) * 2; // S=4*qz
-	//	qx = (m02 + m20) / S;
-	//	qy = (m12 + m21) / S;
-	//	qz = 0.25 * S;
-	//}
-	double S{ 2 * sin(acos((trace - 1) / 2)) };
+	double qx, qy, qz;
+	if (trace > 0) {
+		double S = sqrt(trace + 1.0) * 2; // S=4*qw
+		qx = (m21 - m12) / S;
+		qy = (m02 - m20) / S;
+		qz = (m10 - m01) / S;
+	}
+	else if (m00 > m11 && m00 > m22) {
+		double S = sqrt(1.0 + m00 - m11 - m22) * 2; // S=4*qx
+		qx = 0.25 * S;
+		qy = (m01 + m10) / S;
+		qz = (m02 + m20) / S;
+	}
+	else if (m11 > m22) {
+		double S = sqrt(1.0 + m11 - m00 - m22) * 2; // S=4*qy
+		qx = (m01 + m10) / S;
+		qy = 0.25 * S;
+		qz = (m12 + m21) / S;
+	}
+	else {
+		double S = sqrt(1.0 + m22 - m00 - m11) * 2; // S=4*qz
+		qx = (m02 + m20) / S;
+		qy = (m12 + m21) / S;
+		qz = 0.25 * S;
+	}
+	/*double S{ 2 * sin(acos((trace - 1) / 2)) };
 	double qx{ (m21 - m12) / S };
 	double qy{ (m02 - m20) / S };
-	double qz{ (m10 - m01) / S };
-	return sin((acos((trace - 1) / 2)) / 2) * (cv::Mat_<double>(3, 1) << qx, qy, qz);
+	double qz{ (m10 - m01) / S };*/
+	return /*sin((acos((trace - 1) / 2)) / 2) * */(cv::Mat_<double>(3, 1) << qx, qy, qz);
 }
 
 cv::Mat quatMinimal2rot(const cv::Mat& q)
@@ -363,21 +364,21 @@ private:
 	bool m_debug;
 };
 
-int CalibrateAll(std::vector<cv::Mat> imageVec, const cv::Size& BOARD_SIZE, const uint32_t& SQUARE_SIZE, std::vector<std::vector<double>> robotPosVec,
+int CalibrateAll(std::vector<cv::Mat> inImageVec, const cv::Size& BOARD_SIZE, const uint32_t& SQUARE_SIZE, std::vector<std::vector<double>> inRobotPosVec,
 	cv::Mat& cameraMatrix, cv::Mat& distCoeffs, cv::Mat& R_camera2end, cv::Mat& t_camera2end, cv::Mat& R_custom2robot, cv::Mat& t_custom2robot)
 {
 
 	std::vector<std::vector<cv::Point2f> > imagePoints;
-	for (int i = 0; i < imageVec.size(); i++)
+	std::vector<cv::Mat> imageVec;
+	std::vector<std::vector<double>> robotPosVec;
+	for (int i = 0; i < inImageVec.size(); i++)
 	{
 		std::vector<cv::Point2f> corners;
-		if (true == FindChessboradCorners(imageVec[i], BOARD_SIZE, corners))
+		if (true == FindChessboradCorners(inImageVec[i], BOARD_SIZE, corners))
 		{
 			imagePoints.push_back(corners);
-		}
-		else
-		{
-			robotPosVec.erase(robotPosVec.begin() + i);
+			imageVec.push_back(inImageVec[i]);
+			robotPosVec.push_back(inRobotPosVec[i]);
 		}
 	}
 	std::vector<std::vector<cv::Point3f>> objPoints{};
@@ -414,7 +415,8 @@ int CalibrateAll(std::vector<cv::Mat> imageVec, const cv::Size& BOARD_SIZE, cons
 	ceres::Problem problem1;
 	ceres::Solver::Options options;
 	options.minimizer_progress_to_stdout = false;
-	options.linear_solver_type = ceres::DENSE_QR;
+	//options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
+	//options.trust_region_strategy_type = ceres::DOGLEG;
 	options.max_num_iterations = 10000;
 	ceres::Solver::Summary summary;
 	int idx = 0;
@@ -469,6 +471,9 @@ int CalibrateAll(std::vector<cv::Mat> imageVec, const cv::Size& BOARD_SIZE, cons
 	cv::Mat Pcg = 2 * Pcg_ / sqrt(1 + Pcg_norm.at<double>(0, 0)); //eq 14
 
 	cv::Mat Rcg = quatMinimal2rot(Pcg / 2.0);
+	std::cout << "Assert \n" << Hg[0](cv::Rect(0, 0, 3, 3)) * Rcg * Hc[0](cv::Rect(0, 0, 3, 3)) << " == \n" << Hg[1](cv::Rect(0, 0, 3, 3)) * Rcg * Hc[1](cv::Rect(0, 0, 3, 3)) << std::endl;
+	std::cout << "Assert \n" << Rcg * Rcg.t() << " == \n" << cv::Mat::eye(3, 3, CV_64F) << std::endl;
+	std::cout << "Assert " << cv::determinant(Rcg) << "== 1" << std::endl;
 
 	cv::Mat Tcg{ cv::Mat::zeros(3,1,CV_64F) };
 	ceres::Problem problem2;
@@ -503,16 +508,18 @@ int CalibrateAll(std::vector<cv::Mat> imageVec, const cv::Size& BOARD_SIZE, cons
 			// compute initial value
 			if (i == 0 && j == 1)
 			{
-				ceres::Solve(options, &problem2, &summary);
+				cv::solve(diffLeft, diffRight, Tcg, cv::DECOMP_SVD);
 			}
 		}
 	}
 
 	ceres::Solve(options, &problem2, &summary);
+	std::cout << "Tcg " << summary.BriefReport() << std::endl;
+	std::cout << "Assert " << vec_Hgij[0](cv::Rect(0, 0, 3, 3)) * Tcg + vec_Hgij[0](cv::Rect(3, 0, 1, 3)) << std::endl
+		<< " == \n" << Rcg * vec_Hcij[0](cv::Rect(3, 0, 1, 3)) + Tcg << std::endl;
 	R_camera2end = Rcg;
 	t_camera2end = Tcg;
-	std::cout << "Tcg " << summary.BriefReport() << std::endl
-		<< "R_camera2end:" << R_camera2end << std::endl
+	std::cout << "R_camera2end:" << R_camera2end << std::endl
 		<< "t_camera2end:" << t_camera2end << std::endl;
 	//end of eye-in-hand calibration
 	//start custom system calibration
@@ -632,15 +639,19 @@ int TestCalibrateAllDemo(bool useRobot = false)
 	}
 	else
 	{
-		robotPosVec.emplace_back<std::vector<double>>({ -49.38, 671.00, 759.28, 143.24, -177.42, 4.39 });
-		robotPosVec.emplace_back<std::vector<double>>({ 146.64, 686.72, 710.61, 124.32, 169.89, -12.94 });
-		robotPosVec.emplace_back<std::vector<double>>({ -267.57, 553.50, 833.55, 159.16, -160.31, 20.04 });
-		robotPosVec.emplace_back<std::vector<double>>({ -202.13, 448.99, 673.82, 174.91, -158.68, 26.84 });
+		robotPosVec.emplace_back<std::vector<double>>({ 700.000000,0.000000,750.000000,180.000000,0.000000,180.000000 });
+		robotPosVec.emplace_back<std::vector<double>>({ 450.000000,50.000000,750.000000,180.000000,30.000000,180.000000 });
+		robotPosVec.emplace_back<std::vector<double>>({ 600.000000,-300.000000,750.000000,160.000000,0.000000,150.000000 });
+		robotPosVec.emplace_back<std::vector<double>>({ 300.000000,0.000000,800.000000,180.000000,45.000000,180.000000 });
+		robotPosVec.emplace_back<std::vector<double>>({ 500.000000,200.000000,800.000000,120.000000,30.000000,180.000000 });
+		robotPosVec.emplace_back<std::vector<double>>({ 500.000000,300.000000,600.000000,120.000000,45.000000,180.000000 });
 		std::vector<std::string> fileNames{
-			".\\calib_data\\-49.380000,671.000000,759.280000,143.240000,-177.420000,4.390000,.jpg",
-			".\\calib_data\\146.640000,686.720000,710.610000,124.320000,169.890000,-12.940000,.jpg",
-			".\\calib_data\\-267.570000,553.500000,833.550000,159.160000,-160.310000,20.040000,.jpg",
-			".\\calib_data\\-202.130000,448.990000,673.820000,174.910000,-158.680000,26.840000,.jpg"
+			".\\calib_data\\700.000000,0.000000,750.000000,180.000000,0.000000,180.000000,.jpg",
+			".\\calib_data\\450.000000,50.000000,750.000000,180.000000,30.000000,180.000000,.jpg",
+			".\\calib_data\\600.000000,-300.000000,750.000000,160.000000,0.000000,150.000000,.jpg",
+			".\\calib_data\\300.000000,0.000000,800.000000,180.000000,45.000000,180.000000,.jpg",
+			".\\calib_data\\500.000000,200.000000,800.000000,120.000000,30.000000,180.000000,.jpg",
+			".\\calib_data\\500.000000,300.000000,600.000000,120.000000,45.000000,180.000000,.jpg"
 		};
 		for (std::string file : fileNames)
 		{
