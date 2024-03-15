@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv)
 {
-	TestCalibrateAllDemo(false);
+	TestCalibrateAllDemo();
 	return 0;
 }
 

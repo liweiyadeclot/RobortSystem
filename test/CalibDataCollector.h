@@ -23,7 +23,7 @@ void CalibDataCollector()
 {
 	RobotMoveSubSystem robot;
 	std::shared_ptr<Camera> camera{ CameraManager::GetInstance()->GetOrOpenCamera() };
-	std::vector<double> currentPos{ 500, -300, 750, 160, 0, 150 };
+	std::vector<double> currentPos{ 800, 0, 550, 0, 0, 180 };
 	while (true)
 	{
 		robot.MoveToPos(currentPos[0], currentPos[1], currentPos[2], currentPos[3], currentPos[4], currentPos[5]);

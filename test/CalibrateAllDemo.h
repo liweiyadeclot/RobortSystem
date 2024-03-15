@@ -47,7 +47,7 @@ void genChessBoardObjectPoints(const cv::Size BOARD_SIZE, const uint32_t SQUARE_
 
 void PosToRT(const std::vector<double> pos, cv::Mat& R_end2robot, cv::Mat& t_end2robot)
 {
-	double rz{ pos[3] * CV_PI / 180 }, ry{ pos[4] * CV_PI / 180 }, rx{ pos[5] * CV_PI / 180 };
+	double rz{ pos[3] * CV_PI / 180.0f }, ry{ pos[4] * CV_PI / 180.0f }, rx{ pos[5] * CV_PI / 180.0f };
 	double sinRz{ sin(rz) }, cosRz{ cos(rz) }, sinRy{ sin(ry) }, cosRy{ cos(ry) }, sinRx{ sin(rx) }, cosRx{ cos(rx) };
 
 	// Calculate rotation about x axis
@@ -389,21 +389,27 @@ int CalibrateAll(std::vector<cv::Mat> inImageVec, const cv::Size& BOARD_SIZE, co
 	// end of camera calibration
 	//start eye-in-hand calibration (partly copy from OpenCV source)
 	//计算和收集所需数据
-	std::vector<cv::Mat> Hg, Hc, R_robot2endVec, t_robot2endVec;
+	std::vector<cv::Mat> Hg, Hc, R_robot2endVec, t_robot2endVec, R_gripper2baseVec, t_gripper2baseVec;
 	for (int i = 0; i < imagePoints.size(); i++) {
-		cv::Mat& rvec{ rvec_custom2cameraVecs[i] }, & tvec{ tvec_custom2cameraVecs[i] };
+		cv::Mat rvec{ rvec_custom2cameraVecs[i] }, tvec{ tvec_custom2cameraVecs[i] };
 		Hc.push_back(RtVec2T(rvec, tvec));
 
 		cv::Mat R_gripper2base, t_gripper2base;
 		PosToRT(robotPosVec[i], R_gripper2base, t_gripper2base);
 		Hg.push_back(Rt2T(R_gripper2base, t_gripper2base));
+		cv::Mat rvec_gripper2base;
+		cv::Rodrigues(R_gripper2base, rvec_gripper2base);
+		R_gripper2baseVec.push_back(rvec_gripper2base);
+		t_gripper2baseVec.push_back(t_gripper2base);
 
 		cv::Mat R_robot2end;
 		cv::transpose(R_gripper2base, R_robot2end);
 		R_robot2endVec.push_back(R_robot2end);
 		t_robot2endVec.push_back(-R_robot2end * t_gripper2base);
 	}
-
+	//cv::calibrateHandEye(R_gripper2baseVec, t_gripper2baseVec, rvec_custom2cameraVecs, tvec_custom2cameraVecs, R_camera2end, t_camera2end);
+	//std::cout << "R_camera2end:" << R_camera2end << std::endl
+	//	<< "t_camera2end:" << t_camera2end << std::endl;
 	//Number of unique camera position pairs
 	int K = static_cast<int>((Hg.size() * Hg.size() - Hg.size()) / 2.0);
 
@@ -435,6 +441,7 @@ int CalibrateAll(std::vector<cv::Mat> inImageVec, const cv::Size& BOARD_SIZE, co
 			//Defines coordinate transformation from Ci to Cj
 			//Hci is from CW (calibration target) to Ci (camera)
 			//Hcj is from CW (calibration target) to Cj (camera)
+			cv::Mat Hcit = homogeneousInverse(Hc[i]);
 			cv::Mat Hcij = Hc[j] * homogeneousInverse(Hc[i]); //eq 7
 			vec_Hcij.push_back(Hcij);
 			//Rotation axis for Rcij
@@ -471,10 +478,14 @@ int CalibrateAll(std::vector<cv::Mat> inImageVec, const cv::Size& BOARD_SIZE, co
 	cv::Mat Pcg = 2 * Pcg_ / sqrt(1 + Pcg_norm.at<double>(0, 0)); //eq 14
 
 	cv::Mat Rcg = quatMinimal2rot(Pcg / 2.0);
+	//Lemma I
 	std::cout << "Assert \n" << Hg[0](cv::Rect(0, 0, 3, 3)) * Rcg * Hc[0](cv::Rect(0, 0, 3, 3)) << " == \n" << Hg[1](cv::Rect(0, 0, 3, 3)) * Rcg * Hc[1](cv::Rect(0, 0, 3, 3)) << std::endl;
 	std::cout << "Assert \n" << Rcg * Rcg.t() << " == \n" << cv::Mat::eye(3, 3, CV_64F) << std::endl;
 	std::cout << "Assert " << cv::determinant(Rcg) << "== 1" << std::endl;
-
+	//Lemma II
+	std::cout << "Assert \n" << Rcg * rot2quatMinimal(vec_Hcij[0](cv::Rect(0, 0, 3, 3))) << "==\n" << rot2quatMinimal(vec_Hgij[0](cv::Rect(0, 0, 3, 3))) << std::endl;
+	//Lemma III
+	std::cout << "Assert \n" << Pcg.t()*(rot2quatMinimal(vec_Hgij[0](cv::Rect(0, 0, 3, 3))) - rot2quatMinimal(vec_Hcij[0](cv::Rect(0, 0, 3, 3)))) << "==0\n" << std::endl;
 	cv::Mat Tcg{ cv::Mat::zeros(3,1,CV_64F) };
 	ceres::Problem problem2;
 	idx = 0;
@@ -493,9 +504,11 @@ int CalibrateAll(std::vector<cv::Mat> inImageVec, const cv::Size& BOARD_SIZE, co
 
 			//Left-hand side: (Rgij - I)
 			cv::Mat diffLeft = Hgij(cv::Rect(0, 0, 3, 3)) - cv::Mat::eye(3, 3, CV_64FC1);
-
+			
 			//Right-hand side: Rcg*Tcij - Tgij
 			cv::Mat diffRight = Rcg * Hcij(cv::Rect(3, 0, 1, 3)) - Hgij(cv::Rect(3, 0, 1, 3));
+			std::cout << "diffLeft:\n" << diffLeft << std::endl;
+			std::cout << "diffRight:\n" << diffRight << std::endl;
 			//Translation from camera to gripper is obtained from the set of equations:
 			//    (Rgij - I) * Tcg = Rcg*Tcij - Tgij    (eq 15)
 			problem2.AddResidualBlock(
@@ -509,6 +522,7 @@ int CalibrateAll(std::vector<cv::Mat> inImageVec, const cv::Size& BOARD_SIZE, co
 			if (i == 0 && j == 1)
 			{
 				cv::solve(diffLeft, diffRight, Tcg, cv::DECOMP_SVD);
+				std::cout << "Tcg init:" << Tcg << std::endl;
 			}
 		}
 	}
@@ -639,19 +653,15 @@ int TestCalibrateAllDemo(bool useRobot = false)
 	}
 	else
 	{
-		robotPosVec.emplace_back<std::vector<double>>({ 700.000000,0.000000,750.000000,180.000000,0.000000,180.000000 });
-		robotPosVec.emplace_back<std::vector<double>>({ 450.000000,50.000000,750.000000,180.000000,30.000000,180.000000 });
-		robotPosVec.emplace_back<std::vector<double>>({ 600.000000,-300.000000,750.000000,160.000000,0.000000,150.000000 });
-		robotPosVec.emplace_back<std::vector<double>>({ 300.000000,0.000000,800.000000,180.000000,45.000000,180.000000 });
-		robotPosVec.emplace_back<std::vector<double>>({ 500.000000,200.000000,800.000000,120.000000,30.000000,180.000000 });
-		robotPosVec.emplace_back<std::vector<double>>({ 500.000000,300.000000,600.000000,120.000000,45.000000,180.000000 });
+		robotPosVec.emplace_back<std::vector<double>>({ 650.000000,50.000000,750.000000,0.000000,0.000000,180.000000 });
+		robotPosVec.emplace_back<std::vector<double>>({ 650.000000,300.000000,650.000000,0.000000,0.000000,150.000000 });
+		robotPosVec.emplace_back<std::vector<double>>({ 650.000000,-300.000000,700.000000,0.000000,0.000000,210.000000 });
+		robotPosVec.emplace_back<std::vector<double>>({ 350.000000,0.000000,700.000000,0.000000,-30.000000,180.000000 });
 		std::vector<std::string> fileNames{
-			".\\calib_data\\700.000000,0.000000,750.000000,180.000000,0.000000,180.000000,.jpg",
-			".\\calib_data\\450.000000,50.000000,750.000000,180.000000,30.000000,180.000000,.jpg",
-			".\\calib_data\\600.000000,-300.000000,750.000000,160.000000,0.000000,150.000000,.jpg",
-			".\\calib_data\\300.000000,0.000000,800.000000,180.000000,45.000000,180.000000,.jpg",
-			".\\calib_data\\500.000000,200.000000,800.000000,120.000000,30.000000,180.000000,.jpg",
-			".\\calib_data\\500.000000,300.000000,600.000000,120.000000,45.000000,180.000000,.jpg"
+			".\\calib_data\\650.000000,50.000000,750.000000,0.000000,0.000000,180.000000,.jpg",
+			".\\calib_data\\650.000000,300.000000,650.000000,0.000000,0.000000,150.000000,.jpg",
+			".\\calib_data\\650.000000,-300.000000,700.000000,0.000000,0.000000,210.000000,.jpg",
+			".\\calib_data\\350.000000,0.000000,700.000000,0.000000,-30.000000,180.000000,.jpg"
 		};
 		for (std::string file : fileNames)
 		{
