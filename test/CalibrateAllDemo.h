@@ -25,11 +25,6 @@ bool FindChessboradCorners(const cv::InputArray image, const cv::Size patternSiz
 	if (found)
 	{
 		cv::cornerSubPix(input, outCorners, cv::Size(5, 5), cv::Size(-1, -1), cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 30, 0.1));
-		/*cv::Mat view{ image.getMat().clone() };
-		cv::drawChessboardCorners(view, patternSize, outCorners, true);
-		cv::resize(view.clone(), view, cv::Size(640, 480));
-		cv::imshow("Chessboard", view);
-		cv::waitKey(3*1000);*/
 	}
 	return found;
 }
@@ -69,7 +64,7 @@ void PosToRT(const std::vector<double> pos, cv::Mat& R_end2robot, cv::Mat& t_end
 		0, 0, 1
 		);
 	// Combined rotation matrix
-	R_end2robot = R_x * R_y * R_z;
+	R_end2robot = R_z * R_y * R_x;
 
 	t_end2robot = (cv::Mat_<double>(3, 1) <<
 		pos[0],
@@ -154,11 +149,7 @@ cv::Mat rot2quatMinimal(const cv::Mat& R)
 		qy = (m12 + m21) / S;
 		qz = 0.25 * S;
 	}
-	/*double S{ 2 * sin(acos((trace - 1) / 2)) };
-	double qx{ (m21 - m12) / S };
-	double qy{ (m02 - m20) / S };
-	double qz{ (m10 - m01) / S };*/
-	return /*sin((acos((trace - 1) / 2)) / 2) * */(cv::Mat_<double>(3, 1) << qx, qy, qz);
+	return (cv::Mat_<double>(3, 1) << qx, qy, qz);
 }
 
 cv::Mat quatMinimal2rot(const cv::Mat& q)
@@ -326,7 +317,7 @@ public:
 	}
 
 	template <typename T>
-	bool operator()(const T const q_end2camera[4], const T const t_end2camera[3], const T const q_custom2robot[4], const T const t_custom2robot[3], T residual[1]) const
+	bool operator()(const T const q_custom2robot[4], const T const t_custom2robot[3], T residual[1]) const
 	{
 		T P_custom[3]{};
 		ArrayTypeConvert(m_P_custom, P_custom, 3);
@@ -334,10 +325,10 @@ public:
 		ArrayTypeConvert(m_q_robot2end, q_robot2end, 4);
 		T t_robot2end[3]{};
 		ArrayTypeConvert(m_t_robot2end, t_robot2end, 3);
-		/*T q_end2camera[4]{};
+		T q_end2camera[4]{};
 		ArrayTypeConvert(m_q_end2camera, q_end2camera, 4);
 		T t_end2camera[3]{};
-		ArrayTypeConvert(m_t_end2camera, t_end2camera, 3);*/
+		ArrayTypeConvert(m_t_end2camera, t_end2camera, 3);
 		T cameraMatrix[9]{};
 		ArrayTypeConvert(m_cameraMatrix, cameraMatrix, 9);
 
@@ -485,7 +476,7 @@ int CalibrateAll(std::vector<cv::Mat> inImageVec, const cv::Size& BOARD_SIZE, co
 	//Lemma II
 	std::cout << "Assert \n" << Rcg * rot2quatMinimal(vec_Hcij[0](cv::Rect(0, 0, 3, 3))) << "==\n" << rot2quatMinimal(vec_Hgij[0](cv::Rect(0, 0, 3, 3))) << std::endl;
 	//Lemma III
-	std::cout << "Assert \n" << Pcg.t()*(rot2quatMinimal(vec_Hgij[0](cv::Rect(0, 0, 3, 3))) - rot2quatMinimal(vec_Hcij[0](cv::Rect(0, 0, 3, 3)))) << "==0\n" << std::endl;
+	std::cout << "Assert \n" << Pcg.t() * (rot2quatMinimal(vec_Hgij[0](cv::Rect(0, 0, 3, 3))) - rot2quatMinimal(vec_Hcij[0](cv::Rect(0, 0, 3, 3)))) << "==0\n" << std::endl;
 	cv::Mat Tcg{ cv::Mat::zeros(3,1,CV_64F) };
 	ceres::Problem problem2;
 	idx = 0;
@@ -504,7 +495,7 @@ int CalibrateAll(std::vector<cv::Mat> inImageVec, const cv::Size& BOARD_SIZE, co
 
 			//Left-hand side: (Rgij - I)
 			cv::Mat diffLeft = Hgij(cv::Rect(0, 0, 3, 3)) - cv::Mat::eye(3, 3, CV_64FC1);
-			
+
 			//Right-hand side: Rcg*Tcij - Tgij
 			cv::Mat diffRight = Rcg * Hcij(cv::Rect(3, 0, 1, 3)) - Hgij(cv::Rect(3, 0, 1, 3));
 			std::cout << "diffLeft:\n" << diffLeft << std::endl;
@@ -533,8 +524,6 @@ int CalibrateAll(std::vector<cv::Mat> inImageVec, const cv::Size& BOARD_SIZE, co
 		<< " == \n" << Rcg * vec_Hcij[0](cv::Rect(3, 0, 1, 3)) + Tcg << std::endl;
 	R_camera2end = Rcg;
 	t_camera2end = Tcg;
-	std::cout << "R_camera2end:" << R_camera2end << std::endl
-		<< "t_camera2end:" << t_camera2end << std::endl;
 	//end of eye-in-hand calibration
 	//start custom system calibration
 
@@ -550,9 +539,6 @@ int CalibrateAll(std::vector<cv::Mat> inImageVec, const cv::Size& BOARD_SIZE, co
 	cv::Mat R_end2camera;
 	cv::transpose(R_camera2end, R_end2camera);
 	cv::Mat t_end2camera{ -R_end2camera * t_camera2end };
-	double* q_end2cameraArray = (double*)malloc(4 * sizeof(double));
-	double* t_end2cameraArray = (double*)t_end2camera.data;
-	CVRotationMatrixToQuaternion(R_end2camera, q_end2cameraArray);
 
 	ceres::Problem problem3;
 	// Set up the only cost function (also known as residual). This uses
@@ -564,10 +550,10 @@ int CalibrateAll(std::vector<cv::Mat> inImageVec, const cv::Size& BOARD_SIZE, co
 			cv::Mat R_robot2end{ R_robot2endVec[i] };
 			cv::Mat t_robot2end{ t_robot2endVec[i] };
 			problem3.AddResidualBlock(
-				new ceres::AutoDiffCostFunction<ReprojectionCostFunctor, 1, 4, 3, 4, 3>(new ReprojectionCostFunctor(R_robot2end, t_robot2end, R_end2camera, t_end2camera, cameraMatrix, distCoeffs, cv::Mat(objPoints[i][j]), cv::Mat(imagePoints[i][j]))),
+				new ceres::AutoDiffCostFunction<ReprojectionCostFunctor, 1, 4, 3>(new ReprojectionCostFunctor(R_robot2end, t_robot2end, R_end2camera, t_end2camera, cameraMatrix, distCoeffs, cv::Mat(objPoints[i][j]), cv::Mat(imagePoints[i][j]))),
 				new ceres::HuberLoss(1.0),
 				//nullptr,
-				q_end2cameraArray, t_end2cameraArray, q_custom2robotArray, t_custom2robotArray);
+				q_custom2robotArray, t_custom2robotArray);
 		}
 	}
 
@@ -576,7 +562,6 @@ int CalibrateAll(std::vector<cv::Mat> inImageVec, const cv::Size& BOARD_SIZE, co
 	ceres::QuaternionToRotation(q_custom2robotArray, R_custom2robotArray);
 	R_custom2robot = cv::Mat(3, 3, CV_64F, R_custom2robotArray);
 	t_custom2robot = cv::Mat(3, 1, CV_64F, t_custom2robotArray);
-	ceres::QuaternionToRotation(q_end2cameraArray, (double*)R_end2camera.data);
 	cv::transpose(R_end2camera, R_camera2end);
 	t_camera2end = -R_camera2end * t_end2camera;
 	std::cout << summary.BriefReport() << std::endl
@@ -586,31 +571,31 @@ int CalibrateAll(std::vector<cv::Mat> inImageVec, const cv::Size& BOARD_SIZE, co
 		<< "t_custom2robot:" << t_custom2robot << std::endl;
 	// end of custom system calibration
 	// start reprojection validation
-	for (int i = 0; i < imagePoints.size(); i++)
-	{
-		std::vector<cv::Point2f> reprojPoints{};
-		std::vector<cv::Point3f> estimateP_cameraVec{};
-		for (int j = 0; j < imagePoints[i].size(); j += 1)
-		{
-			cv::Mat estimateP_base{ }, estimateP_gripper{ }, estimateP_camera{ };
-			obj.at<double>(0, 0) = objPoints[i][j].x;
-			obj.at<double>(1, 0) = objPoints[i][j].y;
-			obj.at<double>(2, 0) = objPoints[i][j].z;
-			estimateP_base = R_custom2robot * obj + t_custom2robot;
-			estimateP_gripper = R_robot2endVec[i] * estimateP_base + t_robot2endVec[i];
-			estimateP_camera = R_end2camera * estimateP_gripper + t_end2camera;
-			estimateP_cameraVec.emplace_back(estimateP_camera);
-			/*cv::Mat estimateHomoP_image = cameraMatrix * estimateP_camera / estimateP_camera.at<double>(2, 0);
-			reprojPoints.emplace_back(estimateHomoP_image.at<double>(0, 0), estimateHomoP_image.at<double>(1, 0));*/
-		}
-		cv::projectPoints(estimateP_cameraVec, cv::Mat::eye(3, 3, CV_64F), cv::Mat::zeros(3, 1, CV_64F), cameraMatrix, distCoeffs, reprojPoints);
-		cv::Mat view;
-		cv::undistort(imageVec[i].clone(), view, cameraMatrix, distCoeffs);
-		drawChessboardCorners(view, BOARD_SIZE, reprojPoints, true);
-		cv::resize(view.clone(), view, cv::Size(640, 480));
-		std::string windowName{ std::string("reprojection0") };
-		windowName[windowName.length() - 1] += i;
-		cv::imshow(windowName, view);
+	//for (int i = 0; i < imagePoints.size(); i++)
+	//{
+	//	std::vector<cv::Point2f> reprojPoints{};
+	//	std::vector<cv::Point3f> estimateP_cameraVec{};
+	//	for (int j = 0; j < imagePoints[i].size(); j += 1)
+	//	{
+	//		cv::Mat estimateP_base{ }, estimateP_gripper{ }, estimateP_camera{ };
+	//		obj.at<double>(0, 0) = objPoints[i][j].x;
+	//		obj.at<double>(1, 0) = objPoints[i][j].y;
+	//		obj.at<double>(2, 0) = objPoints[i][j].z;
+	//		estimateP_base = R_custom2robot * obj + t_custom2robot;
+	//		estimateP_gripper = R_robot2endVec[i] * estimateP_base + t_robot2endVec[i];
+	//		estimateP_camera = R_end2camera * estimateP_gripper + t_end2camera;
+	//		estimateP_cameraVec.emplace_back(estimateP_camera);
+	//		/*cv::Mat estimateHomoP_image = cameraMatrix * estimateP_camera / estimateP_camera.at<double>(2, 0);
+	//		reprojPoints.emplace_back(estimateHomoP_image.at<double>(0, 0), estimateHomoP_image.at<double>(1, 0));*/
+	//	}
+	//	cv::projectPoints(estimateP_cameraVec, cv::Mat::eye(3, 3, CV_64F), cv::Mat::zeros(3, 1, CV_64F), cameraMatrix, distCoeffs, reprojPoints);
+	//	cv::Mat view;
+	//	cv::undistort(imageVec[i].clone(), view, cameraMatrix, distCoeffs);
+	//	drawChessboardCorners(view, BOARD_SIZE, reprojPoints, true);
+	//	cv::resize(view.clone(), view, cv::Size(640, 480));
+	//	std::string windowName{ std::string("reprojection0") };
+	//	windowName[windowName.length() - 1] += i;
+	//	cv::imshow(windowName, view);
 	}
 	return 0;
 }
