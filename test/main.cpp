@@ -1,9 +1,9 @@
-#include "CalibrateAllDemo.h"
+#include "CustomSystemMoveDemo.h"
 #include "CalibDataCollector.h"
 
 int main(int argc, char** argv)
 {
-	TestCalibrateAllDemo();
+	TestCustomSystemMove();
 	return 0;
 }
 
