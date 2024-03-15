@@ -596,7 +596,7 @@ int CalibrateAll(std::vector<cv::Mat> inImageVec, const cv::Size& BOARD_SIZE, co
 	//	std::string windowName{ std::string("reprojection0") };
 	//	windowName[windowName.length() - 1] += i;
 	//	cv::imshow(windowName, view);
-	}
+	//}
 	return 0;
 }
 
