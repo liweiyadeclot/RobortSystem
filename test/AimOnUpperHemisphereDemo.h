@@ -39,7 +39,7 @@ void GenCircleOnFixedZ(const std::vector<double>& center3d, double radius, doubl
 	for (uint16_t i = 0; i < positionCount; i++)
 	{
 		double theta{ (2 * (double)i / (double)positionCount) * CV_PI };
-		double x{ cos(theta) * circleRadius + center3d[0]}, y{sin(theta) * circleRadius + center3d[1] };
+		double x{ cos(theta) * circleRadius + center3d[0] }, y{ sin(theta) * circleRadius + center3d[1] };
 		positionVec.push_back({ x, y, z });
 	}
 }
@@ -58,13 +58,13 @@ void AimAtLowerPoint(const std::vector<double>& selfPosition3d, const std::vecto
 void TurnToVerticalDirection(cv::Mat& aimedR)
 {
 	double rz{ 0 };
-	if (aimedR.at<double>(2, 0) < 0)
+	if (aimedR.at<double>(2, 0) > 0)
 	{
-		rz = CV_PI / 2 - atan(-aimedR.at<double>(2, 1) / aimedR.at<double>(2, 0));
+		rz = atan(aimedR.at<double>(2, 1) / aimedR.at<double>(2, 0));
 	}
 	else if (aimedR.at<double>(2, 1) > 0)
 	{
-		rz = atan(-aimedR.at<double>(2, 0) / aimedR.at<double>(2, 1));
+		rz = CV_PI / 2 - atan(aimedR.at<double>(2, 0) / aimedR.at<double>(2, 1));
 	}
 	aimedR = aimedR * (cv::Mat_<double>(3, 3) <<
 		cos(rz), -sin(rz), 0,
@@ -258,7 +258,7 @@ void TestGenCircleOnFixedZ(bool useRobot = false)
 	 {0,90,300, 0, 0, 180} ,
 	 {0,120,300, 0, 0, 180} ,
 	 {0,150,300, 0, 0, 180} };
-	size_t originalSize{posVec.size()};
+	size_t originalSize{ posVec.size() };
 	std::vector<std::vector<double>> positionVec{};
 	GenCircleOnFixedZ({ 75,120,0 }, 350, 300, 15, positionVec);
 	posVec.resize(originalSize + positionVec.size(), { 0,0,0,0,0,180 });
@@ -266,7 +266,7 @@ void TestGenCircleOnFixedZ(bool useRobot = false)
 	{
 		for (int j = 0; j < 3; j++)
 		{
-			posVec[originalSize+i][j] = positionVec[i][j];
+			posVec[originalSize + i][j] = positionVec[i][j];
 		}
 	}
 
