@@ -144,6 +144,8 @@
   <ItemGroup>
     <ClInclude Include="CalibDataCollector.h" />
     <ClInclude Include="CalibrateAllDemo.h" />
+    <ClInclude Include="AimOnUpperHemisphereDemo.h" />
+    <ClInclude Include="CalibWithOpenCVDemo.h" />
     <ClInclude Include="CustomSystemMoveDemo.h" />
     <ClCompile Include="HIKCamera.cpp" />
     <ClCompile Include="CameraManager.cpp" />
@@ -154,6 +156,7 @@
     <ClCompile Include="RobotInfo.cpp" />
     <ClCompile Include="RobotInfoHandler.cpp" />
     <ClCompile Include="RobotMoveSubSystem.cpp" />
+    <ClInclude Include="SingularityDetectDemo.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />

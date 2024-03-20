@@ -1,9 +1,10 @@
-#include "CustomSystemMoveDemo.h"
+#include "AimOnUpperHemisphereDemo.h"
 #include "CalibDataCollector.h"
 
 int main(int argc, char** argv)
 {
-	TestCustomSystemMove();
+	//CalibDataCollector();
+	TestAimOnUpperHemisphereVertically(true);
 	return 0;
 }
 

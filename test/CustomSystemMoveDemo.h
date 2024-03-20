@@ -1,9 +1,9 @@
-#include "CalibrateAllDemo.h"
+//#include "CalibrateAllDemo.h"
+#include "CalibWithOpenCVDemo.h"
 
 void RTToPos(const cv::Mat R_end2robot, const cv::Mat t_end2robot, std::vector<double>& pos)
 {
-	if (pos.size() < 6)
-		pos.resize(6, 0);
+	pos.resize(6, 0);
 	for (int i = 0; i < 3; i++)
 	{
 		pos[i] = t_end2robot.at<double>(i, 0);
@@ -25,8 +25,8 @@ void RTToPos(const cv::Mat R_end2robot, const cv::Mat t_end2robot, std::vector<d
 		rz = atan2(R_end2robot.at<double>(1, 0) / cos(ry), R_end2robot.at<double>(0, 0) / cos(ry));
 	}
 	pos[3] = rz * 180 / CV_PI;
-	pos[5] = rx * 180 / CV_PI;
 	pos[4] = ry * 180 / CV_PI;
+	pos[5] = rx * 180 / CV_PI;
 }
 
 void CustomSystemMove(const std::vector<double> cameraPos_custom, const cv::Mat R_custom2robot, const cv::Mat t_custom2robot, const cv::Mat R_end2camera, const cv::Mat t_end2camera,
@@ -111,11 +111,11 @@ int TestCustomSystemMove(bool useRobot = false)
 	}
 	cv::Mat cameraMatrix, distCoeffs, R_gripper2cam, t_gripper2cam, R_obj2base, t_obj2base;
 	int ret = CalibrateAll(images, BOARD_SIZE, SQUARE_SIZE, robotPosVec, cameraMatrix, distCoeffs, R_gripper2cam, t_gripper2cam, R_obj2base, t_obj2base);
-	
+
 	std::vector<double> robotPos;
 	for (double y = 0; y <= BOARD_SIZE.width * SQUARE_SIZE; y += SQUARE_SIZE)
 	{
-		CustomSystemMove(std::vector<double>({ 0,y,300,0,0,180 }), R_obj2base, t_obj2base, R_gripper2cam, t_gripper2cam, robotPos);
+		CustomSystemMove(std::vector<double>({ 0,y,200,0,0,180 }), R_obj2base, t_obj2base, R_gripper2cam, t_gripper2cam, robotPos);
 		if (useRobot)
 		{
 			RobotMoveSubSystem robotMovement;

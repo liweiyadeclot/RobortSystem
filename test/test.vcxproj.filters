@@ -128,5 +128,14 @@
     <ClInclude Include="CalibDataCollector.h">
       <Filter>头文件\Demo</Filter>
     </ClInclude>
+    <ClInclude Include="AimOnUpperHemisphereDemo.h">
+      <Filter>头文件\Demo</Filter>
+    </ClInclude>
+    <ClInclude Include="SingularityDetectDemo.h">
+      <Filter>头文件\Demo</Filter>
+    </ClInclude>
+    <ClInclude Include="CalibWithOpenCVDemo.h">
+      <Filter>头文件\Demo</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
